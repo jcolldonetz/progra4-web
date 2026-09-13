@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
-const storage = {
+export const storage = {
   getToken() {
     return localStorage.getItem('progra4_token')
   },
@@ -31,6 +31,10 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Ejecuta una petición contra la API descrita en openapi.yaml.
+ * Añade el header Authorization: Bearer <jwt> cuando auth = true.
+ */
 async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -68,29 +72,33 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
 }
 
 export const api = {
-  register(payload) {
-    return request('/register', { method: 'POST', body: payload, auth: false })
-  },
+  // Auth
   login(payload) {
+    // POST /login -> 200 TokenResponse | 401 | 422
     return request('/login', { method: 'POST', body: payload, auth: false })
   },
+
+  // Items (usa /items y /items/{id})
   items: {
     list() {
+      // GET /items -> 200 [Item]
       return request('/items')
     },
     get(id) {
+      // GET /items/{id} -> 200 Item | 404 | 422
       return request(`/items/${id}`)
     },
     create(payload) {
+      // POST /items -> 201 Item | 422
       return request('/items', { method: 'POST', body: payload })
     },
     update(id, payload) {
+      // PUT /items/{id} -> 200 Item | 404 | 422
       return request(`/items/${id}`, { method: 'PUT', body: payload })
     },
     remove(id) {
+      // DELETE /items/{id} -> 204 | 404 | 422
       return request(`/items/${id}`, { method: 'DELETE' })
     },
   },
 }
-
-export { storage }

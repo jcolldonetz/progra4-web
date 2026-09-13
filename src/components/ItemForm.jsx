@@ -1,37 +1,49 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError } from '../api/client'
-import { GlobalError, FieldError } from '../components/common'
+import { api, ApiError } from '../services/api'
 
-export default function ItemForm() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const isEdit = Boolean(id)
+function GlobalError({ children }) {
+  if (!children) return null
+  return <div className="alert alert-error">{children}</div>
+}
+
+function FieldError({ field, errors }) {
+  if (!field || !errors || !errors[field]) return null
+  return <div className="field-error">{errors[field].join(', ')}</div>
+}
+
+/**
+ * Crea o edita un item según el contrato de openapi.yaml.
+ * itemId = null -> POST /items; itemId = número -> PUT /items/{id}
+ * (en edición, precarga los datos con GET /items/{id}).
+ */
+export default function ItemForm({ itemId, onSaved, onCancel }) {
+  const isEdit = itemId != null
 
   const [form, setForm] = useState({ nombre: '', precio: '' })
   const [errors, setErrors] = useState(null)
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [fetched, setFetched] = useState(false)
+  const [fetched, setFetched] = useState(!isEdit)
 
   useEffect(() => {
-    if (!isEdit) {
-      setFetched(true)
-      return
-    }
+    if (!isEdit) return
+
     let active = true
     api.items
-      .get(id)
+      .get(itemId)
       .then((item) => {
         if (!active) return
         setForm({ nombre: item.nombre, precio: String(item.precio) })
       })
       .catch((err) => setGlobalError(err.message))
-      .finally(() => active && setFetched(true))
+      .finally(() => {
+        if (active) setFetched(true)
+      })
+
     return () => {
       active = false
     }
-  }, [id, isEdit])
+  }, [itemId, isEdit])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -44,9 +56,9 @@ export default function ItemForm() {
     setLoading(true)
     try {
       const payload = { nombre: form.nombre, precio: Number(form.precio) }
-      if (isEdit) await api.items.update(id, payload)
+      if (isEdit) await api.items.update(itemId, payload)
       else await api.items.create(payload)
-      navigate('/items')
+      onSaved?.()
     } catch (err) {
       if (err instanceof ApiError && err.errors) setErrors(err.errors)
       else setGlobalError(err.message)
@@ -61,9 +73,9 @@ export default function ItemForm() {
     <div className="page">
       <div className="page-header">
         <h2>{isEdit ? 'Editar ítem' : 'Nuevo ítem'}</h2>
-        <Link to="/items" className="btn btn-small">
+        <button type="button" className="btn btn-small" onClick={onCancel}>
           Volver
-        </Link>
+        </button>
       </div>
 
       <form className="form-card" onSubmit={handleSubmit} noValidate>
@@ -103,9 +115,9 @@ export default function ItemForm() {
           <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear ítem'}
           </button>
-          <Link to="/items" className="btn">
+          <button type="button" className="btn" onClick={onCancel}>
             Cancelar
-          </Link>
+          </button>
         </div>
       </form>
     </div>
