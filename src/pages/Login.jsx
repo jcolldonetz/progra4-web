@@ -3,11 +3,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../api/client'
 import { GlobalError, FieldError } from '../components/common'
+import PersistenceSelector from '../components/PersistenceSelector'
 
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ username: '', password: '' })
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('progra4_auth_mode') || 'localStorage'
+    } catch {
+      return 'localStorage'
+    }
+  })
   const [errors, setErrors] = useState(null)
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -22,7 +30,7 @@ export default function Login() {
     setGlobalError(null)
     setLoading(true)
     try {
-      await login(form)
+      await login(form, mode)
       navigate('/items')
     } catch (err) {
       if (err instanceof ApiError && err.errors) setErrors(err.errors)
@@ -73,8 +81,16 @@ export default function Login() {
           {loading ? 'Ingresando…' : 'Ingresar'}
         </button>
 
+        <div className="persist-spacer">
+          <PersistenceSelector value={mode} onChange={setMode} />
+        </div>
+
         <p className="auth-switch">
           ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+        </p>
+
+        <p className="auth-switch">
+          <Link to="/storage">Demo de persistencia en el cliente</Link>
         </p>
 
         <p className="auth-hint">

@@ -2,7 +2,7 @@
 
 Cliente web (SPA) en **React + Vite** para la API [`progra4-api`](../progra4-api).
 
-Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, una vez autenticado, administrar la entidad **item** con operaciones CRUD (listar, ver, crear, editar y eliminar).
+Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, una vez autenticado, administrar la entidad **item** con operaciones CRUD (listar, ver, crear, editar y eliminar). Incluye además una **demo didáctica de persistencia en el cliente** (`/storage`) sobre `localStorage`, `sessionStorage` y cookies, pensada para la clase de Programación 4.
 
 ## Características
 
@@ -16,6 +16,7 @@ Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, un
   - Edición (`PUT /items/{id}`)
   - Eliminación (`DELETE /items/{id}`)
 - Manejo de errores de la API (mensajes y errores por campo).
+- `GET /me` para restaurar sesión y `POST /logout` para cerrarla en el servidor.
 
 ## Requisitos
 
@@ -81,6 +82,34 @@ npm run dev
 
 Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `1234`.
 
+## Demo de persistencia en el cliente
+
+Accesible sin login en `/storage` (o desde el enlace **Demo persistencia** de la barra y de la página de acceso). Es la demostración que se usa en clase para la diapositiva *"Persistencia en el cliente: localStorage, sessionStorage y cookies"*.
+
+En el formulario de **login/registro**, el selector **"¿Dónde guardar la sesión?"** elige dónde se persiste el token JWT. Cada modo corresponde a un mecanismo del navegador:
+
+| Modo | Mecanismo | Comportamiento |
+| --- | --- | --- |
+| `localStorage` | `localStorage['progra4_token']` | Permanente hasta borrarlo (~5–10 MB). Sobrevive a recargar y cerrar la pestaña. |
+| `sessionStorage` | `sessionStorage['progra4_token']` | Solo mientras la pestaña esté abierta (~5 MB). Se borra al cerrarla. |
+| Cookie (JS) | `document.cookie['access_token']` con `Max-Age` | Legible/escrita por JS (~4 KB). Viaja sola con cada petición HTTP. |
+| Cookie HttpOnly | `Set-Cookie: access_token; HttpOnly` (la API) | No legible por JS; la envía el navegador sola. Solo el servidor la borra con `POST /logout`. |
+
+Detalles de implementación:
+
+- El **modo elegido se guarda como preferencia** en `localStorage` (caso de uso "preferencias del usuario" de la diapositiva).
+- En los modos cookie, el cliente **no envía** `Authorization: Bearer`; se demuestra que la cookie llega sola (fetch con `credentials: 'include'`).
+- En el modo `cookie_httponly`, login/registro mandan `auth_cookie: true` y la API emite la cookie HttpOnly. Al recargar la SPA (que no puede leer la cookie), la sesión se restaura con `GET /me`; al cerrar sesión se llama a `POST /logout`.
+- La página `/storage` muestra en vivo el contenido de cada almacén, ejecuta ejemplos idénticos a la diapositiva (`setItem` / `getItem` / `removeItem`, `document.cookie`) mostrando el código ejecutado, y permite limpiarlo todo.
+
+### Requisitos de la API
+
+La API debe incluir los endpoints y cabeceras de esta demo (ya implementados en `progra4-api`):
+
+- `POST /logout` (borra la cookie), `GET /me` (valida sesión).
+- `auth_cookie: true` en login/register para emitir la cookie HttpOnly.
+- CORS con `Access-Control-Allow-Credentials: true` y origen en lista blanca (para que la cookie funcione entre `localhost:5173` y `localhost:8000`).
+
 ## Scripts disponibles
 
 | Comando            | Descripción                                       |
@@ -94,16 +123,20 @@ Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `1234`.
 
 ```
 src/
-├── api/client.js          # Cliente HTTP (fetch) y manejo del JWT
-├── auth/useAuth.jsx       # Contexto de autenticación (login/logout/register)
+├── api/client.js          # Cliente HTTP (fetch) y manejo del JWT según el modo
+├── auth/
+│   ├── persistence.js     # Modos localStorage/sessionStorage/cookie/cookie_httponly
+│   └── useAuth.jsx        # Contexto de autenticación (login/logout/register + /me)
 ├── components/
 │   ├── Layout.jsx         # Barra de navegación y estructura base
+│   ├── PersistenceSelector.jsx # Selector "¿dónde guardar la sesión?"
 │   └── common.jsx         # Componentes reutilizables (alertas, spinner)
 ├── pages/
-│   ├── Login.jsx          # Inicio de sesión
-│   ├── Register.jsx       # Registro de cuenta
+│   ├── Login.jsx          # Inicio de sesión (con selector de persistencia)
+│   ├── Register.jsx       # Registro de cuenta (con selector de persistencia)
 │   ├── ItemList.jsx       # Listado de items
 │   ├── ItemDetail.jsx     # Detalle de un item
-│   └── ItemForm.jsx       # Crear / editar item (baja por formulario)
+│   ├── ItemForm.jsx       # Crear / editar item (baja por formulario)
+│   └── StorageDemo.jsx    # Demo didáctica de persistencia en el cliente
 └── utils/format.js        # Formato de precios y errores
 ```

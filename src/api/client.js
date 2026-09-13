@@ -1,26 +1,15 @@
+import {
+  getSessionBackend,
+  clearAllSessions,
+  getAuthMode,
+  setAuthMode,
+} from '../auth/persistence'
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
-const storage = {
-  getToken() {
-    return localStorage.getItem('progra4_token')
-  },
-  setToken(token) {
-    if (token) localStorage.setItem('progra4_token', token)
-    else localStorage.removeItem('progra4_token')
-  },
-  getUser() {
-    const raw = localStorage.getItem('progra4_user')
-    try {
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  },
-  setUser(user) {
-    if (user) localStorage.setItem('progra4_user', JSON.stringify(user))
-    else localStorage.removeItem('progra4_user')
-  },
-}
+// En los modos de cookie (JS u HttpOnly) el token viaja SOLO en la cookie;
+// no se manda Bearer, para que la clase vea que la cookie llega automática.
+const usesCookieAuth = () => getAuthMode() === 'cookie' || getAuthMode() === 'cookie_httponly'
 
 export class ApiError extends Error {
   constructor(message, status, errors) {
@@ -31,11 +20,26 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, auth = true } = {}) {
+// Helper de sesión que delega en el backend del modo activo.
+const session = {
+  getToken: () => getSessionBackend().getToken(),
+  setToken: (token) => getSessionBackend().setToken(token),
+  getUser: () => getSessionBackend().getUser(),
+  setUser: (user) => getSessionBackend().setUser(user),
+  getMode: getAuthMode,
+  setMode: setAuthMode,
+  clearAll: clearAllSessions,
+}
+
+async function request(path, { method = 'GET', body, auth = true, authFromCookie = false } = {}) {
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  if (auth) {
-    const token = storage.getToken()
+
+  // En los modos de cookie (JS u HttpOnly) el token viaja solo en la cookie:
+  // NO se manda la cabecera Authorization, para evidenciarlo en clase.
+  const sendBearer = auth && !authFromCookie
+  if (sendBearer) {
+    const token = session.getToken()
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
 
@@ -44,6 +48,7 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       headers,
+      credentials: 'include',
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
@@ -74,23 +79,29 @@ export const api = {
   login(payload) {
     return request('/login', { method: 'POST', body: payload, auth: false })
   },
+  me() {
+    return request('/me', { authFromCookie: usesCookieAuth() })
+  },
+  logout() {
+    return request('/logout', { method: 'POST', auth: false })
+  },
   items: {
     list() {
-      return request('/items')
+      return request('/items', { authFromCookie: usesCookieAuth() })
     },
     get(id) {
-      return request(`/items/${id}`)
+      return request(`/items/${id}`, { authFromCookie: usesCookieAuth() })
     },
     create(payload) {
-      return request('/items', { method: 'POST', body: payload })
+      return request('/items', { method: 'POST', body: payload, authFromCookie: usesCookieAuth() })
     },
     update(id, payload) {
-      return request(`/items/${id}`, { method: 'PUT', body: payload })
+      return request(`/items/${id}`, { method: 'PUT', body: payload, authFromCookie: usesCookieAuth() })
     },
     remove(id) {
-      return request(`/items/${id}`, { method: 'DELETE' })
+      return request(`/items/${id}`, { method: 'DELETE', authFromCookie: usesCookieAuth() })
     },
   },
 }
 
-export { storage }
+export { session }

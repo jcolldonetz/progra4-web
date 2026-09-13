@@ -3,11 +3,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../api/client'
 import { GlobalError, FieldError } from '../components/common'
+import PersistenceSelector from '../components/PersistenceSelector'
 
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ username: '', password: '', password2: '' })
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('progra4_auth_mode') || 'localStorage'
+    } catch {
+      return 'localStorage'
+    }
+  })
   const [errors, setErrors] = useState(null)
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -28,7 +36,7 @@ export default function Register() {
 
     setLoading(true)
     try {
-      await register({ username: form.username, password: form.password })
+      await register({ username: form.username, password: form.password }, mode)
       navigate('/items')
     } catch (err) {
       if (err instanceof ApiError && err.errors) setErrors(err.errors)
@@ -93,6 +101,10 @@ export default function Register() {
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
           {loading ? 'Creando…' : 'Crear cuenta'}
         </button>
+
+        <div className="persist-spacer">
+          <PersistenceSelector value={mode} onChange={setMode} />
+        </div>
 
         <p className="auth-switch">
           ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>

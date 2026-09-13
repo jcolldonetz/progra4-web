@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import ItemList from './pages/ItemList'
 import ItemDetail from './pages/ItemDetail'
 import ItemForm from './pages/ItemForm'
+import StorageDemo from './pages/StorageDemo'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -38,6 +39,8 @@ function AppRoutes() {
           </PublicOnlyRoute>
         }
       />
+
+      <Route path="/storage" element={<StorageDemo />} />
 
       <Route
         element={
