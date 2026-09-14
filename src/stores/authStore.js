@@ -30,6 +30,14 @@ export async function login(payload) {
   return data.user
 }
 
+export async function register(payload) {
+  const data = await api.register(payload)
+  storage.setToken(data.token)
+  storage.setUser(data.user)
+  setState({ user: data.user, token: data.token })
+  return data.user
+}
+
 export function logout() {
   storage.setToken(null)
   storage.setUser(null)
@@ -42,6 +50,7 @@ export function useAuth() {
     ...snapshot,
     isAuthenticated: Boolean(snapshot.token),
     login,
+    register,
     logout,
   }
 }

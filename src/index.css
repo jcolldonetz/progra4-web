@@ -223,6 +223,37 @@ body {
   font-size: 18px;
 }
 
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link {
+  color: #d6e2f0;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-link.active {
+  color: #fff;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .navbar-right {
   display: flex;
   align-items: center;
@@ -240,6 +271,19 @@ body {
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .page-header {

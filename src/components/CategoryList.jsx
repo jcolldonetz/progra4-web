@@ -1,52 +1,38 @@
-function formatPrice(value) {
-  const num = Number(value)
-  if (Number.isNaN(num)) return String(value)
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-  }).format(num)
-}
+import { Link } from 'react-router-dom'
 
 function Spinner() {
   return <div className="spinner" role="status" aria-label="Cargando" />
 }
 
 /**
- * Muestra la tabla de items (puede usarse tanto en Dashboard como en las
- * páginas de Items y de Items-por-Categoría).
- *
- * Props opcionales:
- *  - categorias: lista [{id, nombre}...] para mostrar el nombre en la columna
- *    "Categoría" (si no se pasa, la columna no aparece).
- *  - titulo: texto alternativo para el encabezado h2 (default "Ítems").
+ * Muestra la tabla de categorías con su items_count.
+ * Se reutiliza en el Dashboard y en la página Categorías.
+ * El enlace "Ver items" navega a /categorias/{id}/items (lado "N" de la
+ * relación 1:N demostrando el formulario de items en otra página).
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems' }) {
-  const catMap = Array.isArray(categorias)
-    ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
-    : null
-
+export default function CategoryList({ items, loading, onNew, onEdit, onDelete }) {
   if (loading) return <Spinner />
 
   if (items.length === 0) {
     return (
-      <>
+      <div className="page">
         <div className="page-header">
-          <h2>{titulo}</h2>
+          <h2>Categorías</h2>
           <button type="button" className="btn btn-primary" onClick={onNew}>
-            + Nuevo ítem
+            + Nueva categoría
           </button>
         </div>
-        <p className="empty">No hay ítems registrados.</p>
-      </>
+        <p className="empty">No hay categorías registradas.</p>
+      </div>
     )
   }
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{titulo}</h2>
+        <h2>Categorías</h2>
         <button type="button" className="btn btn-primary" onClick={onNew}>
-          + Nuevo ítem
+          + Nueva categoría
         </button>
       </div>
 
@@ -55,8 +41,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
           <tr>
             <th>ID</th>
             <th>Nombre</th>
-            <th className="num">Precio</th>
-            {catMap !== null && <th>Categoría</th>}
+            <th className="num">Ítems</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -65,11 +50,11 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.nombre}</td>
-              <td className="num">{formatPrice(item.precio)}</td>
-              {catMap !== null && (
-                <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
-              )}
+              <td className="num">{item.items_count}</td>
               <td className="actions">
+                <Link className="btn btn-small" to={`/categorias/${item.id}/items`}>
+                  Ver items
+                </Link>
                 <button type="button" className="btn btn-small" onClick={() => onEdit(item)}>
                   Editar
                 </button>

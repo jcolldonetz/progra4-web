@@ -77,6 +77,10 @@ export const api = {
     // POST /login -> 200 TokenResponse | 401 | 422
     return request('/login', { method: 'POST', body: payload, auth: false })
   },
+  register(payload) {
+    // POST /register -> 201 TokenResponse | 422
+    return request('/register', { method: 'POST', body: payload, auth: false })
+  },
 
   // Items (usa /items y /items/{id})
   items: {
@@ -99,6 +103,34 @@ export const api = {
     remove(id) {
       // DELETE /items/{id} -> 204 | 404 | 422
       return request(`/items/${id}`, { method: 'DELETE' })
+    },
+  },
+
+  // Categorias (usa /categorias, /categorias/{id} y /categorias/{id}/items)
+  categorias: {
+    list() {
+      // GET /categorias -> 200 [Categoria] (cada una con items_count)
+      return request('/categorias')
+    },
+    get(id) {
+      // GET /categorias/{id} -> 200 Categoria | 404 | 422
+      return request(`/categorias/${id}`)
+    },
+    items(id) {
+      // GET /categorias/{id}/items -> 200 [Item] | 404 | 422
+      return request(`/categorias/${id}/items`)
+    },
+    create(payload) {
+      // POST /categorias -> 201 Categoria | 422
+      return request('/categorias', { method: 'POST', body: payload })
+    },
+    update(id, payload) {
+      // PUT /categorias/{id} -> 200 Categoria | 404 | 422
+      return request(`/categorias/${id}`, { method: 'PUT', body: payload })
+    },
+    remove(id) {
+      // DELETE /categorias/{id} -> 204 | 404 | 422
+      return request(`/categorias/${id}`, { method: 'DELETE' })
     },
   },
 }

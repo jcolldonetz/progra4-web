@@ -17,7 +17,11 @@ import { createRoot } from 'react-dom/client'      // createRoot: "monta" la app
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom' // enrutador de URLs
 import './index.css'                               // estilos globales de toda la app
 import LoginPage from './pages/LoginPage'          // pantalla de login
+import RegisterPage from './pages/RegisterPage'    // pantalla de registro
 import DashboardPage from './pages/DashboardPage'  // pantalla del panel (solo con sesión)
+import ItemsPage from './pages/ItemsPage'          // gestión dedicada de items
+import CategoryPage from './pages/CategoryPage'    // gestión dedicada de categorías
+import CategoryItemsPage from './pages/CategoryItemsPage' // items de una categoría
 
 // App es el componente raíz: aquí se declara el ÁRBOL DE RUTAS, es decir, la
 // tabla que relaciona cada URL del navegador con la pantalla que se muestra.
@@ -28,8 +32,16 @@ export default function App() {
       <Routes>
         {/* URL /login  -> pantalla de LoginPage (formulario de inicio de sesión) */}
         <Route path="/login" element={<LoginPage />} />
+        {/* URL /register -> pantalla de RegisterPage (formulario de registro) */}
+        <Route path="/register" element={<RegisterPage />} />
         {/* URL /      -> pantalla de DashboardPage (protegida: solo con sesión) */}
         <Route path="/" element={<DashboardPage />} />
+        {/* URL /items -> gestión dedicada de items (reutiliza ItemForm) */}
+        <Route path="/items" element={<ItemsPage />} />
+        {/* URL /categorias -> gestión dedicada de categorías (reutiliza CategoryForm) */}
+        <Route path="/categorias" element={<CategoryPage />} />
+        {/* URL /categorias/:id/items -> items de una categoría (reutiliza ItemForm) */}
+        <Route path="/categorias/:id/items" element={<CategoryItemsPage />} />
         {/* Cualquier otra URL (*) no existe: se redirige a "/" sin dejar
             rastro en el historial ("replace"). */}
         <Route path="*" element={<Navigate to="/" replace />} />

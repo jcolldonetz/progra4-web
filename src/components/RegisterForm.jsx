@@ -1,19 +1,19 @@
 // =============================================================================
-// LoginForm.jsx — FORMULARIO DE LOGIN (usuario + contraseña).
+// RegisterForm.jsx — FORMULARIO DE REGISTRO (usuario + contraseña).
 //
 // Componente reutilizable que hace tres cosas:
 //   1) Dibuja el formulario (inputs y botón) en HTML/JSX.
 //   2) "Recuerda" lo que el usuario va escribiendo (para eso sirven los
 //      "estados" de useState).
-//   3) Al enviar, llama a la API (POST /login) con las credenciales y muestra
+//   3) Al enviar, llama a la API (POST /register) con los datos y muestra
 //      los errores que la API devuelva (por campo o generales).
 //
-// No sabe qué ocurre DESPUÉS de un login exitoso: se lo informa a la página
+// No sabe qué ocurre DESPUÉS de un registro exitoso: se lo informa a la página
 // padre mediante la propiedad onSuccess, y la página decide a dónde navegar.
 //
-// Flujo completo del login (para leer de arriba a abajo):
+// Flujo completo del registro (para leer de arriba a abajo):
 //   usuario escribe  -> handleChange guarda el texto en "form"
-//   usuario envía    -> handleSubmit llama a "login(form)" (capa services/api.js)
+//   usuario envía    -> handleSubmit llama a "register(form)" (capa services/api.js)
 //   la API responde  -> o bien la sesión se guarda y se avisa con onSuccess(),
 //                       o bien se muestra un error (global o por campo).
 // =============================================================================
@@ -23,7 +23,7 @@ import { Link } from 'react-router-dom'      // enlace SPA (sin recarga de pági
 import { useAuth } from '../stores/authStore' // store central de la sesión
 import { ApiError } from '../services/api'    // clase de error que lanza la capa de API
 
-// Componente auxiliar: muestra un error GENERAL (ej. "Credenciales inválidas").
+// Componente auxiliar: muestra un error GENERAL (ej. "El usuario ya está registrado").
 // "children" es el contenido que el padre pone entre las etiquetas.
 // Si no hay error (children viene vacío) no dibuja nada.
 function GlobalError({ children }) {
@@ -40,18 +40,18 @@ function FieldError({ field, errors }) {
 
 // Componente principal. Recibe "props" (propiedades): datos que la página padre
 // le pasa entre llaves, aquí únicamente "onSuccess" (función opcional que se
-// ejecuta cuando el login es exitoso).
-export default function LoginForm({ onSuccess }) {
-  // "login" es la función del store que llama a la API (services/api.js),
+// ejecuta cuando el registro es exitoso).
+export default function RegisterForm({ onSuccess }) {
+  // "register" es la función del store que llama a la API (services/api.js),
   // guarda el token y el usuario en la sesión y avisa a toda la app.
-  const { login } = useAuth()
+  const { register } = useAuth()
 
   // useState crea una "CAJA DE MEMORIA" del componente:
   //   const [valor, setValor] = useState(initial)  ->  valor = estado actual
   //                                                   setValor = función para cambiarlo
   // Cada vez que se llama a setValor, React vuelve a dibujar el componente
   // con el nuevo valor. Esos son los 4 estados de este formulario:
-  const [form, setForm] = useState({ username: '', password: '' }) // lo escrito en los inputs
+  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' }) // lo escrito en los inputs
   const [errors, setErrors] = useState(null)        // errores POR CAMPO de la API
   const [globalError, setGlobalError] = useState(null) // error GENERAL de la API
   const [loading, setLoading] = useState(false)     // true mientras se envía la petición
@@ -67,7 +67,7 @@ export default function LoginForm({ onSuccess }) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  // Maneja el evento "se envió el formulario" (botón Ingresar o tecla Enter).
+  // Maneja el evento "se envió el formulario" (botón Registrarse o tecla Enter).
   // Es una función "async": puede llamar a la API y ESPERAR su respuesta con
   // "await" sin bloquear el navegador.
   const handleSubmit = async (e) => {
@@ -76,14 +76,24 @@ export default function LoginForm({ onSuccess }) {
     setGlobalError(null)
     setLoading(true) // marca "enviando...": desactiva el botón (evita doble envío)
 
+    // Validación local (del lado del navegador) antes de tocar la API:
+    // las dos contraseñas deben coincidir para crear la cuenta.
+    if (form.password !== form.confirmPassword) {
+      setGlobalError('Las contraseñas no coinciden.')
+      setLoading(false)
+      return
+    }
+
     try {
-      await login(form) // 1) Petición POST /login con {username, password}.
-                        //    Si falla, el "await" lanza una excepción -> al catch.
+      // 1) Petición POST /register. Se envía solo lo que la API entiende
+      //    (confirmPassword es solo una verificación del navegador).
+      await register({ username: form.username, password: form.password })
+      //    Si falla, el "await" lanza una excepción -> al catch.
       onSuccess?.()     // 2) Éxito: se avisa a la página padre ("?." = solo si se pasó onSuccess).
     } catch (err) {
       // 3) La API respondió con error. Hay dos tipos:
       //    - ApiError con .errors  -> errores POR CAMPO (respuesta HTTP 422 de validación).
-      //    - cualquier otro        -> error GLOBAL (p. ej. 401 "Credenciales inválidas").
+      //    - cualquier otro        -> error GLOBAL (p. ej. "El usuario ya está registrado").
       if (err instanceof ApiError && err.errors) setErrors(err.errors)
       else setGlobalError(err.message)
     } finally {
@@ -96,8 +106,8 @@ export default function LoginForm({ onSuccess }) {
   // así, cada tecla actualiza el estado y React vuelve a pintar con lo vigente.
   return (
     <form className="auth-card" onSubmit={handleSubmit} noValidate>
-      <h1 className="auth-title">Iniciar sesión</h1>
-      <p className="auth-subtitle">Bienvenido a tu panel</p>
+      <h1 className="auth-title">Crear cuenta</h1>
+      <p className="auth-subtitle">Regístrate para acceder a tu panel</p>
 
       {/* Error general (en rojo), si lo hay */}
       <GlobalError>{globalError}</GlobalError>
@@ -126,25 +136,33 @@ export default function LoginForm({ onSuccess }) {
         className="field-input"
         value={form.password}
         onChange={handleChange}
-        autoComplete="current-password"
+        autoComplete="new-password"
         required
       />
       <FieldError field="password" errors={errors} />
 
+      <label className="field-label" htmlFor="confirmPassword">
+        Confirmar contraseña
+      </label>
+      <input
+        id="confirmPassword"
+        name="confirmPassword"
+        type="password"
+        className="field-input"
+        value={form.confirmPassword}
+        onChange={handleChange}
+        autoComplete="new-password"
+        required
+      />
+
       {/* Botón de envío. disabled={loading} lo bloquea mientras se espera la API. */}
       <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-        {loading ? 'Ingresando…' : 'Ingresar'}
+        {loading ? 'Registrando…' : 'Registrarse'}
       </button>
 
-      {/* Acceso directo al registro: un <Link> (no un <a>) para que el
-          router de React cambie de pantalla sin recargar el navegador. */}
+      {/* Acceso directo de vuelta al login: el texto cambiará de pantalla. */}
       <p className="auth-switch">
-        ¿No tienes cuenta? <Link to="/register">Registrarse</Link>
-      </p>
-
-      {/* Pista para probar la demo (el usuario "admin" se siembra en la API). */}
-      <p className="auth-hint">
-        Demo: usuario <code>admin</code>, contraseña <code>1234</code>
+        ¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link>
       </p>
     </form>
   )

@@ -15,11 +15,16 @@ function FieldError({ field, errors }) {
  * Crea o edita un item según el contrato de openapi.yaml.
  * itemId = null -> POST /items; itemId = número -> PUT /items/{id}
  * (en edición, precarga los datos con GET /items/{id}).
+ *
+ * Props opcionales:
+ *  - categorias: lista [{id, nombre}...] para el select "Categoría".
+ *  - initialCategoriaId: categoría preseleccionada al crear (ej. al agregar
+ *    items desde la página de una categoría).
  */
-export default function ItemForm({ itemId, onSaved, onCancel }) {
+export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], initialCategoriaId = null }) {
   const isEdit = itemId != null
 
-  const [form, setForm] = useState({ nombre: '', precio: '' })
+  const [form, setForm] = useState({ nombre: '', precio: '', categoria_id: String(initialCategoriaId ?? '') })
   const [errors, setErrors] = useState(null)
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -33,7 +38,11 @@ export default function ItemForm({ itemId, onSaved, onCancel }) {
       .get(itemId)
       .then((item) => {
         if (!active) return
-        setForm({ nombre: item.nombre, precio: String(item.precio) })
+        setForm({
+          nombre: item.nombre,
+          precio: String(item.precio),
+          categoria_id: String(item.categoria_id ?? ''),
+        })
       })
       .catch((err) => setGlobalError(err.message))
       .finally(() => {
@@ -55,7 +64,11 @@ export default function ItemForm({ itemId, onSaved, onCancel }) {
     setGlobalError(null)
     setLoading(true)
     try {
-      const payload = { nombre: form.nombre, precio: Number(form.precio) }
+      const payload = {
+        nombre: form.nombre,
+        precio: Number(form.precio),
+        categoria_id: form.categoria_id === '' ? null : Number(form.categoria_id),
+      }
       if (isEdit) await api.items.update(itemId, payload)
       else await api.items.create(payload)
       onSaved?.()
@@ -110,6 +123,25 @@ export default function ItemForm({ itemId, onSaved, onCancel }) {
           required
         />
         <FieldError field="precio" errors={errors} />
+
+        <label className="field-label" htmlFor="categoria_id">
+          Categoría
+        </label>
+        <select
+          id="categoria_id"
+          name="categoria_id"
+          className="field-input"
+          value={form.categoria_id}
+          onChange={handleChange}
+        >
+          <option value="">— Sin categoría —</option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.nombre}
+            </option>
+          ))}
+        </select>
+        <FieldError field="categoria_id" errors={errors} />
 
         <div className="form-actions">
           <button className="btn btn-primary" type="submit" disabled={loading}>
