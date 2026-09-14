@@ -96,6 +96,27 @@ export default function DashboardPage() {
 
         <div className="grid-2">
           <section>
+            {editingCat === null ? (
+              <CategoryList
+                items={categories}
+                loading={loadingCategories}
+                onNew={() => setEditingCat('nuevo')}
+                onEdit={(cat) => setEditingCat(cat.id)}
+                onDelete={handleDeleteCategory}
+              />
+            ) : (
+              <CategoryForm
+                categoriaId={editingCat === 'nuevo' ? null : editingCat}
+                onSaved={() => {
+                  setEditingCat(null)
+                  reload()
+                }}
+                onCancel={() => setEditingCat(null)}
+              />
+            )}
+          </section>
+
+          <section>
             {editing === null ? (
               <ItemList
                 items={items}
@@ -114,27 +135,6 @@ export default function DashboardPage() {
                   reload()
                 }}
                 onCancel={() => setEditing(null)}
-              />
-            )}
-          </section>
-
-          <section>
-            {editingCat === null ? (
-              <CategoryList
-                items={categories}
-                loading={loadingCategories}
-                onNew={() => setEditingCat('nuevo')}
-                onEdit={(cat) => setEditingCat(cat.id)}
-                onDelete={handleDeleteCategory}
-              />
-            ) : (
-              <CategoryForm
-                categoriaId={editingCat === 'nuevo' ? null : editingCat}
-                onSaved={() => {
-                  setEditingCat(null)
-                  reload()
-                }}
-                onCancel={() => setEditingCat(null)}
               />
             )}
           </section>
