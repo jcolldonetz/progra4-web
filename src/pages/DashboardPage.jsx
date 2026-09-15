@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState([])
   const [meta, setMeta] = useState(null)
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoadingItems] = useState(true)
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [error, setError] = useState(null)
   const [refresh, setRefresh] = useState(0)
@@ -44,6 +44,12 @@ export default function DashboardPage() {
       fn()
     }
 
+    api.categorias
+      .list()
+      .then((data) => active && setCategories(data))
+      .catch(guard(() => setError('No se pudieron cargar las categorías.')))
+      .finally(() => active && setLoadingCategories(false))
+
     api.items
       .list({ page })
       .then((res) => {
@@ -52,13 +58,7 @@ export default function DashboardPage() {
         setMeta(res.meta)
       })
       .catch(guard(() => setError('No se pudieron cargar los ítems.')))
-      .finally(() => active && setLoading(false))
-
-    api.categorias
-      .list()
-      .then((data) => active && setCategories(data))
-      .catch(guard(() => setError('No se pudieron cargar las categorías.')))
-      .finally(() => active && setLoadingCategories(false))
+      .finally(() => active && setLoadingItems(false))
 
     return () => {
       active = false
@@ -66,16 +66,16 @@ export default function DashboardPage() {
   }, [refresh, page])
 
   const reload = () => {
-    setPage(1)
-    setLoading(true)
     setLoadingCategories(true)
+    setPage(1)
+    setLoadingItems(true)
     setError(null)
     setRefresh((r) => r + 1)
   }
 
   const goToPage = (next) => {
     setPage(next)
-    setLoading(true)
+    setLoadingItems(true)
     setError(null)
   }
 
