@@ -23,6 +23,8 @@ export default function CategoryItemsPage() {
 
   const [categoria, setCategoria] = useState(null)
   const [items, setItems] = useState([])
+  const [meta, setMeta] = useState(null)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -45,20 +47,31 @@ export default function CategoryItemsPage() {
       .catch(guard(() => setError('No se pudo cargar la categoría.')))
 
     api.categorias
-      .items(id)
-      .then((data) => active && setItems(data))
+      .items(id, { page })
+      .then((res) => {
+        if (!active) return
+        setItems(res.data)
+        setMeta(res.meta)
+      })
       .catch(guard(() => setError('No se pudieron cargar los ítems de la categoría.')))
       .finally(() => active && setLoading(false))
 
     return () => {
       active = false
     }
-  }, [id, refresh])
+  }, [id, refresh, page])
 
   const reload = () => {
+    setPage(1)
     setLoading(true)
     setError(null)
     setRefresh((r) => r + 1)
+  }
+
+  const goToPage = (next) => {
+    setPage(next)
+    setLoading(true)
+    setError(null)
   }
 
   const handleDelete = async (item) => {
@@ -92,6 +105,8 @@ export default function CategoryItemsPage() {
             loading={loading}
             categorias={categoria ? [categoria] : []}
             titulo={categoria ? `Ítems de ${categoria.nombre}` : 'Ítems'}
+            meta={meta}
+            onPageChange={goToPage}
             onNew={() => setEditing('nuevo')}
             onEdit={(item) => setEditing(item.id)}
             onDelete={handleDelete}

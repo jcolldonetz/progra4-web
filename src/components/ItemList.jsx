@@ -12,6 +12,42 @@ function Spinner() {
 }
 
 /**
+ * Controles Anterior/Siguiente + contador, según el meta de la API.
+ * No se muestran hasta que llega el meta (carga inicial).
+ */
+function Pagination({ meta, onPageChange }) {
+  if (!meta) return null
+
+  const { page, total, total_pages: totalPages } = meta
+
+  return (
+    <nav className="pagination" aria-label="Paginación de items">
+      <span className="pagination-info">
+        {total} {total === 1 ? 'resultado' : 'resultados'} · página {page} de {totalPages}
+      </span>
+      <div className="pagination-buttons">
+        <button
+          type="button"
+          className="btn btn-small"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          ‹ Anterior
+        </button>
+        <button
+          type="button"
+          className="btn btn-small"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Siguiente ›
+        </button>
+      </div>
+    </nav>
+  )
+}
+
+/**
  * Muestra la tabla de items (puede usarse tanto en Dashboard como en las
  * páginas de Items y de Items-por-Categoría).
  *
@@ -19,8 +55,10 @@ function Spinner() {
  *  - categorias: lista [{id, nombre}...] para mostrar el nombre en la columna
  *    "Categoría" (si no se pasa, la columna no aparece).
  *  - titulo: texto alternativo para el encabezado h2 (default "Ítems").
+ *  - meta: {page, total, total_pages} proveniente de la API paginada.
+ *  - onPageChange: callback que recibe la página a la que navegar.
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems' }) {
+export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems', meta, onPageChange }) {
   const catMap = Array.isArray(categorias)
     ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
     : null
@@ -85,6 +123,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
           ))}
         </tbody>
       </table>
+      <Pagination meta={meta} onPageChange={onPageChange} />
     </div>
   )
 }

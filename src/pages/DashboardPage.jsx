@@ -24,6 +24,8 @@ export default function DashboardPage() {
 
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState([])
+  const [meta, setMeta] = useState(null)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [error, setError] = useState(null)
@@ -43,8 +45,12 @@ export default function DashboardPage() {
     }
 
     api.items
-      .list()
-      .then((data) => active && setItems(data))
+      .list({ page })
+      .then((res) => {
+        if (!active) return
+        setItems(res.data)
+        setMeta(res.meta)
+      })
       .catch(guard(() => setError('No se pudieron cargar los ítems.')))
       .finally(() => active && setLoading(false))
 
@@ -57,13 +63,20 @@ export default function DashboardPage() {
     return () => {
       active = false
     }
-  }, [refresh])
+  }, [refresh, page])
 
   const reload = () => {
+    setPage(1)
     setLoading(true)
     setLoadingCategories(true)
     setError(null)
     setRefresh((r) => r + 1)
+  }
+
+  const goToPage = (next) => {
+    setPage(next)
+    setLoading(true)
+    setError(null)
   }
 
   const handleDeleteItem = async (item) => {
@@ -122,6 +135,8 @@ export default function DashboardPage() {
                 items={items}
                 loading={loading}
                 categorias={categories}
+                meta={meta}
+                onPageChange={goToPage}
                 onNew={() => setEditing('nuevo')}
                 onEdit={(item) => setEditing(item.id)}
                 onDelete={handleDeleteItem}

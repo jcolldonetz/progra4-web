@@ -20,6 +20,8 @@ export default function ItemsPage() {
   const { isAuthenticated } = useAuth()
   const [items, setItems] = useState([])
   const [categorias, setCategories] = useState([])
+  const [meta, setMeta] = useState(null)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -37,8 +39,12 @@ export default function ItemsPage() {
     }
 
     api.items
-      .list()
-      .then((data) => active && setItems(data))
+      .list({ page })
+      .then((res) => {
+        if (!active) return
+        setItems(res.data)
+        setMeta(res.meta)
+      })
       .catch(guard(() => setError('No se pudieron cargar los ítems.')))
       .finally(() => active && setLoading(false))
 
@@ -50,12 +56,19 @@ export default function ItemsPage() {
     return () => {
       active = false
     }
-  }, [refresh])
+  }, [refresh, page])
 
   const reload = () => {
+    setPage(1)
     setLoading(true)
     setError(null)
     setRefresh((r) => r + 1)
+  }
+
+  const goToPage = (next) => {
+    setPage(next)
+    setLoading(true)
+    setError(null)
   }
 
   const handleDelete = async (item) => {
@@ -81,6 +94,8 @@ export default function ItemsPage() {
             items={items}
             loading={loading}
             categorias={categorias}
+            meta={meta}
+            onPageChange={goToPage}
             onNew={() => setEditing('nuevo')}
             onEdit={(item) => setEditing(item.id)}
             onDelete={handleDelete}

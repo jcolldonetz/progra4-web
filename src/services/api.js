@@ -31,6 +31,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Normaliza una colección: el backend responde un array plano; el frontend
+ * espera { data, meta } para mostrar paginación (meta null = sin paginar). */
+function normalizeCollection(data) {
+  if (Array.isArray(data)) return { data, meta: null }
+  return data ?? { data: [], meta: null }
+}
+
+/** Construye "?page=2&per_page=10" a partir de un objeto; omite vacíos. */
+function toQuery(params) {
+  const qs = new URLSearchParams()
+  for (const [key, value] of Object.entries(params || {})) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, value)
+  }
+  const str = qs.toString()
+  return str ? `?${str}` : ''
+}
+
 /**
  * Ejecuta una petición contra la API descrita en openapi.yaml.
  * Añade el header Authorization: Bearer <jwt> cuando auth = true.
@@ -84,9 +101,9 @@ export const api = {
 
   // Items (usa /items y /items/{id})
   items: {
-    list() {
-      // GET /items -> 200 [Item]
-      return request('/items')
+    list(params) {
+      // GET /items?page=&per_page= -> 200 { data, meta } | 422
+      return request(`/items${toQuery(params)}`).then(normalizeCollection)
     },
     get(id) {
       // GET /items/{id} -> 200 Item | 404 | 422
@@ -116,9 +133,9 @@ export const api = {
       // GET /categorias/{id} -> 200 Categoria | 404 | 422
       return request(`/categorias/${id}`)
     },
-    items(id) {
-      // GET /categorias/{id}/items -> 200 [Item] | 404 | 422
-      return request(`/categorias/${id}/items`)
+    items(id, params) {
+      // GET /categorias/{id}/items?page=&per_page= -> 200 { data, meta } | 404 | 422
+      return request(`/categorias/${id}/items${toQuery(params)}`).then(normalizeCollection)
     },
     create(payload) {
       // POST /categorias -> 201 Categoria | 422
