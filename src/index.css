@@ -294,6 +294,23 @@ body {
   color: #5a6472;
 }
 
+.pagination-per-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #5a6472;
+}
+
+.pagination-per-page select {
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: inherit;
+}
+
 .pagination-buttons {
   display: flex;
   gap: 8px;

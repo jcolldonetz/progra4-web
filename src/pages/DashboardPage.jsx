@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState([])
   const [meta, setMeta] = useState(null)
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
   const [loading, setLoadingItems] = useState(true)
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [error, setError] = useState(null)
@@ -51,7 +52,7 @@ export default function DashboardPage() {
       .finally(() => active && setLoadingCategories(false))
 
     api.items
-      .list({ page })
+      .list({ page, per_page: perPage })
       .then((res) => {
         if (!active) return
         setItems(res.data)
@@ -63,7 +64,7 @@ export default function DashboardPage() {
     return () => {
       active = false
     }
-  }, [refresh, page])
+  }, [refresh, page, perPage])
 
   const reload = () => {
     setLoadingCategories(true)
@@ -75,6 +76,13 @@ export default function DashboardPage() {
 
   const goToPage = (next) => {
     setPage(next)
+    setLoadingItems(true)
+    setError(null)
+  }
+
+  const changePerPage = (n) => {
+    setPerPage(n)
+    setPage(1)
     setLoadingItems(true)
     setError(null)
   }
@@ -137,6 +145,7 @@ export default function DashboardPage() {
                 categorias={categories}
                 meta={meta}
                 onPageChange={goToPage}
+                onPerPageChange={changePerPage}
                 onNew={() => setEditing('nuevo')}
                 onEdit={(item) => setEditing(item.id)}
                 onDelete={handleDeleteItem}
