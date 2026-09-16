@@ -12,19 +12,30 @@ function Spinner() {
 }
 
 /**
- * Controles Anterior/Siguiente + contador, según el meta de la API.
- * No se muestran hasta que llega el meta (carga inicial).
+ * Controles Anterior/Siguiente + contador + selector de cantidad por página,
+ * según el meta de la API. No se muestran hasta que llega el meta (carga inicial).
  */
-function Pagination({ meta, onPageChange }) {
+function Pagination({ meta, onPageChange, onPerPageChange }) {
   if (!meta) return null
 
   const { page, total, total_pages: totalPages } = meta
+  const perPageOptions = [10, 20, 50, 100]
 
   return (
     <nav className="pagination" aria-label="Paginación de items">
       <span className="pagination-info">
         {total} {total === 1 ? 'resultado' : 'resultados'} · página {page} de {totalPages}
       </span>
+      <label className="pagination-per-page">
+        Por página
+        <select value={meta.per_page} onChange={(e) => onPerPageChange(Number(e.target.value))}>
+          {perPageOptions.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="pagination-buttons">
         <button
           type="button"
@@ -57,8 +68,9 @@ function Pagination({ meta, onPageChange }) {
  *  - titulo: texto alternativo para el encabezado h2 (default "Ítems").
  *  - meta: {page, total, total_pages} proveniente de la API paginada.
  *  - onPageChange: callback que recibe la página a la que navegar.
+ *  - onPerPageChange: callback que recibe la nueva cantidad por página.
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems', meta, onPageChange }) {
+export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange }) {
   const catMap = Array.isArray(categorias)
     ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
     : null
@@ -123,7 +135,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
           ))}
         </tbody>
       </table>
-      <Pagination meta={meta} onPageChange={onPageChange} />
+      <Pagination meta={meta} onPageChange={onPageChange} onPerPageChange={onPerPageChange} />
     </div>
   )
 }

@@ -22,6 +22,7 @@ export default function ItemsPage() {
   const [categorias, setCategories] = useState([])
   const [meta, setMeta] = useState(null)
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -39,7 +40,7 @@ export default function ItemsPage() {
     }
 
     api.items
-      .list({ page })
+      .list({ page, per_page: perPage })
       .then((res) => {
         if (!active) return
         setItems(res.data)
@@ -56,7 +57,7 @@ export default function ItemsPage() {
     return () => {
       active = false
     }
-  }, [refresh, page])
+  }, [refresh, page, perPage])
 
   const reload = () => {
     setPage(1)
@@ -67,6 +68,13 @@ export default function ItemsPage() {
 
   const goToPage = (next) => {
     setPage(next)
+    setLoading(true)
+    setError(null)
+  }
+
+  const changePerPage = (n) => {
+    setPerPage(n)
+    setPage(1)
     setLoading(true)
     setError(null)
   }
@@ -96,6 +104,7 @@ export default function ItemsPage() {
             categorias={categorias}
             meta={meta}
             onPageChange={goToPage}
+            onPerPageChange={changePerPage}
             onNew={() => setEditing('nuevo')}
             onEdit={(item) => setEditing(item.id)}
             onDelete={handleDelete}
