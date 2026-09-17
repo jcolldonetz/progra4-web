@@ -144,7 +144,7 @@ export default function LoginForm({ onSuccess }) {
 
       {/* Pista para probar la demo (el usuario "admin" se siembra en la API). */}
       <p className="auth-hint">
-        Demo: usuario <code>admin</code>, contraseña <code>1234</code>
+        Demo: usuario <code>admin</code>, contraseña <code>qwerty67</code>
       </p>
     </form>
   )

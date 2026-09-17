@@ -70,7 +70,7 @@ function Pagination({ meta, onPageChange, onPerPageChange }) {
  *  - onPageChange: callback que recibe la página a la que navegar.
  *  - onPerPageChange: callback que recibe la nueva cantidad por página.
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange }) {
+export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRefresh, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange }) {
   const catMap = Array.isArray(categorias)
     ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
     : null
@@ -82,6 +82,11 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
       <>
         <div className="page-header">
           <h2>{titulo}</h2>
+          {onRefresh && (
+            <button type="button" className="btn btn-small" onClick={onRefresh}>
+              ⟳ Actualizar
+            </button>
+          )}
           <button type="button" className="btn btn-primary" onClick={onNew}>
             + Nuevo ítem
           </button>
@@ -95,6 +100,11 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, cate
     <div className="page">
       <div className="page-header">
         <h2>{titulo}</h2>
+        {onRefresh && (
+          <button type="button" className="btn btn-small" onClick={onRefresh}>
+            ⟳ Actualizar
+          </button>
+        )}
         <button type="button" className="btn btn-primary" onClick={onNew}>
           + Nuevo ítem
         </button>

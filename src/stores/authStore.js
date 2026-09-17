@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { api, storage } from '../services/api'
+import { invalidateAll } from '../services/itemsCache'
 
 let state = {
   user: storage.getUser(),
@@ -39,6 +40,7 @@ export async function register(payload) {
 }
 
 export function logout() {
+  invalidateAll()
   storage.setToken(null)
   storage.setUser(null)
   setState({ user: null, token: null })

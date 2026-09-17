@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
+import { itemsCache, invalidateAll } from '../services/itemsCache'
 import Navbar from '../components/Navbar'
 import CategoryList from '../components/CategoryList'
 import CategoryForm from '../components/CategoryForm'
@@ -35,9 +36,9 @@ export default function CategoryPage() {
       fn()
     }
 
-    api.categorias
-      .list()
-      .then((data) => active && setCategories(data))
+    itemsCache
+      .listCategorias()
+      .then((res) => active && setCategories(res.data))
       .catch(guard(() => setError('No se pudieron cargar las categorías.')))
       .finally(() => active && setLoading(false))
 
@@ -47,6 +48,7 @@ export default function CategoryPage() {
   }, [refresh])
 
   const reload = () => {
+    invalidateAll()
     setLoading(true)
     setError(null)
     setRefresh((r) => r + 1)

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
+import { itemsCache, invalidateAll } from '../services/itemsCache'
 import Navbar from '../components/Navbar'
 import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
@@ -45,13 +46,13 @@ export default function DashboardPage() {
       fn()
     }
 
-    api.categorias
-      .list()
-      .then((data) => active && setCategories(data))
+    itemsCache
+      .listCategorias()
+      .then((res) => active && setCategories(res.data))
       .catch(guard(() => setError('No se pudieron cargar las categorías.')))
       .finally(() => active && setLoadingCategories(false))
 
-    api.items
+    itemsCache
       .list({ page, per_page: perPage })
       .then((res) => {
         if (!active) return
@@ -67,6 +68,7 @@ export default function DashboardPage() {
   }, [refresh, page, perPage])
 
   const reload = () => {
+    invalidateAll()
     setLoadingCategories(true)
     setPage(1)
     setLoadingItems(true)
@@ -146,6 +148,7 @@ export default function DashboardPage() {
                 meta={meta}
                 onPageChange={goToPage}
                 onPerPageChange={changePerPage}
+                onRefresh={reload}
                 onNew={() => setEditing('nuevo')}
                 onEdit={(item) => setEditing(item.id)}
                 onDelete={handleDeleteItem}

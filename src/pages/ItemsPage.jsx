@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
+import { itemsCache, invalidateAll } from '../services/itemsCache'
 import Navbar from '../components/Navbar'
 import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
@@ -39,7 +40,7 @@ export default function ItemsPage() {
       fn()
     }
 
-    api.items
+    itemsCache
       .list({ page, per_page: perPage })
       .then((res) => {
         if (!active) return
@@ -49,9 +50,9 @@ export default function ItemsPage() {
       .catch(guard(() => setError('No se pudieron cargar los ítems.')))
       .finally(() => active && setLoading(false))
 
-    api.categorias
-      .list()
-      .then((data) => active && setCategories(data))
+    itemsCache
+      .listCategorias()
+      .then((res) => active && setCategories(res.data))
       .catch(guard(() => {}))
 
     return () => {
@@ -60,6 +61,7 @@ export default function ItemsPage() {
   }, [refresh, page, perPage])
 
   const reload = () => {
+    invalidateAll()
     setPage(1)
     setLoading(true)
     setError(null)
@@ -105,6 +107,7 @@ export default function ItemsPage() {
             meta={meta}
             onPageChange={goToPage}
             onPerPageChange={changePerPage}
+            onRefresh={reload}
             onNew={() => setEditing('nuevo')}
             onEdit={(item) => setEditing(item.id)}
             onDelete={handleDelete}
