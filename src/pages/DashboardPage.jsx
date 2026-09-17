@@ -115,6 +115,10 @@ export default function DashboardPage() {
       danger: true,
     })
     if (!ok) return
+    if (cat.items_count > 0) {
+      setError(`La categoría ${cat.nombre} tiene ${cat.items_count} ${cat.items_count === 1 ? 'item' : 'items'} asociados y no puede eliminarse.`)
+      return
+    }
     try {
       await api.categorias.remove(cat.id)
       reload()
