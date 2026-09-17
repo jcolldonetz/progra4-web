@@ -8,6 +8,7 @@ import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
 import CategoryList from '../components/CategoryList'
 import CategoryForm from '../components/CategoryForm'
+import useConfirm from '../hooks/useConfirm'
 
 function GlobalError({ children }) {
   if (!children) return null
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [refresh, setRefresh] = useState(0)
   const [editing, setEditing] = useState(null)
   const [editingCat, setEditingCat] = useState(null)
+  const [ask, confirmDialog] = useConfirm()
 
   useEffect(() => {
     let active = true
@@ -90,7 +92,13 @@ export default function DashboardPage() {
   }
 
   const handleDeleteItem = async (item) => {
-    if (!window.confirm(`¿Eliminar el ítem "${item.nombre}"?`)) return
+    const ok = await ask({
+      title: 'Eliminar ítem',
+      message: `¿Eliminar el ítem "${item.nombre}"?`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.items.remove(item.id)
       reload()
@@ -100,7 +108,13 @@ export default function DashboardPage() {
   }
 
   const handleDeleteCategory = async (cat) => {
-    if (!window.confirm(`¿Eliminar la categoría "${cat.nombre}"?`)) return
+    const ok = await ask({
+      title: 'Eliminar categoría',
+      message: `¿Eliminar la categoría "${cat.nombre}"?`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.categorias.remove(cat.id)
       reload()
@@ -116,6 +130,8 @@ export default function DashboardPage() {
       <Navbar />
       <main className="content">
         <GlobalError>{error}</GlobalError>
+
+        {confirmDialog}
 
         <div className="grid-2">
           <section>

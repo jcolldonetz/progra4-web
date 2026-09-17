@@ -411,6 +411,48 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Diálogo de confirmación                                             */
+/* ------------------------------------------------------------------ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(23, 32, 44, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  padding: 24px;
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.confirm-message {
+  margin: 0 0 24px;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------------ */
 /* Misc                                                                */
 /* ------------------------------------------------------------------ */
 .alert {

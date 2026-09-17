@@ -6,6 +6,7 @@ import { itemsCache, invalidateAll } from '../services/itemsCache'
 import Navbar from '../components/Navbar'
 import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
+import useConfirm from '../hooks/useConfirm'
 
 function GlobalError({ children }) {
   if (!children) return null
@@ -31,6 +32,7 @@ export default function CategoryItemsPage() {
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null)
   const [refresh, setRefresh] = useState(0)
+  const [ask, confirmDialog] = useConfirm()
 
   useEffect(() => {
     let active = true
@@ -85,7 +87,13 @@ export default function CategoryItemsPage() {
   }
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar el ítem "${item.nombre}"?`)) return
+    const ok = await ask({
+      title: 'Eliminar ítem',
+      message: `¿Eliminar el ítem "${item.nombre}"?`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.items.remove(item.id)
       reload()
@@ -108,6 +116,8 @@ export default function CategoryItemsPage() {
         </div>
 
         <GlobalError>{error}</GlobalError>
+
+        {confirmDialog}
 
         {editing === null ? (
           <ItemList
