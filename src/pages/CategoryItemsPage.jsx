@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
+import { itemsCache, invalidateAll } from '../services/itemsCache'
 import Navbar from '../components/Navbar'
 import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
@@ -47,8 +48,8 @@ export default function CategoryItemsPage() {
       .then((data) => active && setCategoria(data))
       .catch(guard(() => setError('No se pudo cargar la categoría.')))
 
-    api.categorias
-      .items(id, { page, per_page: perPage })
+    itemsCache
+      .listByCategoria(id, { page, per_page: perPage })
       .then((res) => {
         if (!active) return
         setItems(res.data)
@@ -63,6 +64,7 @@ export default function CategoryItemsPage() {
   }, [id, refresh, page, perPage])
 
   const reload = () => {
+    invalidateAll()
     setPage(1)
     setLoading(true)
     setError(null)
@@ -116,6 +118,7 @@ export default function CategoryItemsPage() {
             meta={meta}
             onPageChange={goToPage}
             onPerPageChange={changePerPage}
+            onRefresh={reload}
             onNew={() => setEditing('nuevo')}
             onEdit={(item) => setEditing(item.id)}
             onDelete={handleDelete}

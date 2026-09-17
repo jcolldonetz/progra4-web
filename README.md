@@ -79,7 +79,7 @@ Formas de configurarla:
 npm run dev
 ```
 
-Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `1234`.
+Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `qwerty67`.
 
 ## Scripts disponibles
 
