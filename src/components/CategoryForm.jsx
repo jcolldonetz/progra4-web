@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Loader2, X } from 'lucide-react'
 import { api, ApiError } from '../services/api'
+import IconButton from './IconButton'
 
 function GlobalError({ children }) {
   if (!children) return null
@@ -14,7 +16,8 @@ function FieldError({ field, errors }) {
 /**
  * Crea o edita una categoria según /categorias y /categorias/{id}.
  * categoriaId = null -> POST /categorias; número -> PUT /categorias/{id}.
- * Este formulario se reutiliza en el Dashboard y en la página Categorías.
+ * Se muestra como un overlay centrado vertical y horizontalmente y solo se
+ * cierra con la X o con Cancelar. Se reutiliza en el Dashboard y en Categorías.
  */
 export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
   const isEdit = categoriaId != null
@@ -24,6 +27,7 @@ export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetched, setFetched] = useState(!isEdit)
+  const nombreRef = useRef(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -43,6 +47,10 @@ export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
       active = false
     }
   }, [categoriaId, isEdit])
+
+  useEffect(() => {
+    if (fetched) nombreRef.current?.focus()
+  }, [fetched])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -69,15 +77,22 @@ export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
   if (!fetched) return null
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{isEdit ? 'Editar categoría' : 'Nueva categoría'}</h2>
-        <button type="button" className="btn btn-small" onClick={onCancel}>
-          Volver
-        </button>
-      </div>
+    <div className="modal-overlay">
+      <form
+        className="modal-card"
+        onSubmit={handleSubmit}
+        noValidate
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-form-title"
+      >
+        <div className="modal-head">
+          <h2 id="category-form-title" className="modal-title">
+            {isEdit ? 'Editar categoría' : 'Nueva categoría'}
+          </h2>
+          <IconButton icon={X} label="Cerrar" onClick={onCancel} />
+        </div>
 
-      <form className="form-card" onSubmit={handleSubmit} noValidate>
         <GlobalError>{globalError}</GlobalError>
 
         <label className="field-label" htmlFor="nombre">
@@ -86,6 +101,7 @@ export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
         <input
           id="nombre"
           name="nombre"
+          ref={nombreRef}
           className="field-input"
           value={form.nombre}
           onChange={handleChange}
@@ -94,12 +110,15 @@ export default function CategoryForm({ categoriaId, onSaved, onCancel }) {
         <FieldError field="nombre" errors={errors} />
 
         <div className="form-actions">
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear categoría'}
-          </button>
-          <button type="button" className="btn" onClick={onCancel}>
-            Cancelar
-          </button>
+          <IconButton
+            icon={loading ? Loader2 : Check}
+            label={isEdit ? 'Guardar cambios' : 'Crear categoría'}
+            variant="primary"
+            type="submit"
+            disabled={loading}
+            className={loading ? 'icon-spin' : ''}
+          />
+          <IconButton icon={X} label="Cancelar" onClick={onCancel} />
         </div>
       </form>
     </div>

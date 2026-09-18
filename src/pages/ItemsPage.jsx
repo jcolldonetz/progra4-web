@@ -109,20 +109,19 @@ export default function ItemsPage() {
 
         {confirmDialog}
 
-        {editing === null ? (
-          <ItemList
-            items={items}
-            loading={loading}
-            categorias={categorias}
-            meta={meta}
-            onPageChange={goToPage}
-            onPerPageChange={changePerPage}
-            onRefresh={reload}
-            onNew={() => setEditing('nuevo')}
-            onEdit={(item) => setEditing(item.id)}
-            onDelete={handleDelete}
-          />
-        ) : (
+        <ItemList
+          items={items}
+          loading={loading}
+          categorias={categorias}
+          meta={meta}
+          onPageChange={goToPage}
+          onPerPageChange={changePerPage}
+          onRefresh={reload}
+          onNew={() => setEditing('nuevo')}
+          onEdit={(item) => setEditing(item.id)}
+          onDelete={handleDelete}
+        />
+        {editing !== null && (
           <ItemForm
             itemId={editing === 'nuevo' ? null : editing}
             categorias={categorias}

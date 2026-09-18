@@ -1,3 +1,6 @@
+import { ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import IconButton from './IconButton'
+
 function formatPrice(value) {
   const num = Number(value)
   if (Number.isNaN(num)) return String(value)
@@ -37,30 +40,27 @@ function Pagination({ meta, onPageChange, onPerPageChange }) {
         </select>
       </label>
       <div className="pagination-buttons">
-        <button
-          type="button"
-          className="btn btn-small"
+        <IconButton
+          icon={ChevronLeft}
+          label="Página anterior"
+          size="small"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-        >
-          ‹ Anterior
-        </button>
-        <button
-          type="button"
-          className="btn btn-small"
+        />
+        <IconButton
+          icon={ChevronRight}
+          label="Página siguiente"
+          size="small"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
-        >
-          Siguiente ›
-        </button>
+        />
       </div>
     </nav>
   )
 }
 
 /**
- * Muestra la tabla de items (puede usarse tanto en Dashboard como en las
- * páginas de Items y de Items-por-Categoría).
+ * Muestra la tabla de items (escritorio) o tarjetas (móvil).
  *
  * Props opcionales:
  *  - categorias: lista [{id, nombre}...] para mostrar el nombre en la columna
@@ -77,74 +77,90 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
 
   if (loading) return <Spinner />
 
+  const header = (
+    <div className="page-header">
+      <h2>{titulo}</h2>
+      <div className="page-actions">
+        {onRefresh && (
+          <IconButton icon={RefreshCw} label="Actualizar" onClick={onRefresh} />
+        )}
+        <IconButton icon={Plus} label="Nuevo ítem" variant="primary" onClick={onNew} />
+      </div>
+    </div>
+  )
+
   if (items.length === 0) {
     return (
-      <>
-        <div className="page-header">
-          <h2>{titulo}</h2>
-          {onRefresh && (
-            <button type="button" className="btn btn-small" onClick={onRefresh}>
-              ⟳ Actualizar
-            </button>
-          )}
-          <button type="button" className="btn btn-primary" onClick={onNew}>
-            + Nuevo ítem
-          </button>
-        </div>
+      <div className="page">
+        {header}
         <p className="empty">No hay ítems registrados.</p>
-      </>
+      </div>
     )
   }
 
+  const actions = (item) => (
+    <>
+      <IconButton icon={Pencil} label="Editar" onClick={() => onEdit(item)} />
+      <IconButton
+        icon={Trash2}
+        label="Eliminar"
+        variant="danger"
+        onClick={() => onDelete(item)}
+      />
+    </>
+  )
+
   return (
     <div className="page">
-      <div className="page-header">
-        <h2>{titulo}</h2>
-        {onRefresh && (
-          <button type="button" className="btn btn-small" onClick={onRefresh}>
-            ⟳ Actualizar
-          </button>
-        )}
-        <button type="button" className="btn btn-primary" onClick={onNew}>
-          + Nuevo ítem
-        </button>
+      {header}
+
+      <div className="only-desktop">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th className="num">Precio</th>
+              {catMap !== null && <th>Categoría</th>}
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.nombre}</td>
+                <td className="num">{formatPrice(item.precio)}</td>
+                {catMap !== null && (
+                  <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
+                )}
+                <td className="actions">{actions(item)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th className="num">Precio</th>
-            {catMap !== null && <th>Categoría</th>}
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.nombre}</td>
-              <td className="num">{formatPrice(item.precio)}</td>
+      <div className="cards">
+        {items.map((item) => (
+          <article className="card" key={item.id}>
+            <div className="card-head">
+              <h3 className="card-title">{item.nombre}</h3>
+              <span className="card-badge">#{item.id}</span>
+            </div>
+            <div className="card-meta">
+              <span className="card-price">{formatPrice(item.precio)}</span>
               {catMap !== null && (
-                <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
+                <span>
+                  {item.categoria_id != null ? catMap[item.categoria_id] ?? 'Sin categoría' : 'Sin categoría'}
+                </span>
               )}
-              <td className="actions">
-                <button type="button" className="btn btn-small" onClick={() => onEdit(item)}>
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-small btn-danger"
-                  onClick={() => onDelete(item)}
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </div>
+            <div className="card-actions">{actions(item)}</div>
+          </article>
+        ))}
+      </div>
+
       <Pagination meta={meta} onPageChange={onPageChange} onPerPageChange={onPerPageChange} />
     </div>
   )

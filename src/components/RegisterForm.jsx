@@ -20,8 +20,10 @@
 
 import { useState } from 'react'            // hook para crear "estado" en el componente
 import { Link } from 'react-router-dom'      // enlace SPA (sin recarga de página)
+import { Loader2, UserPlus } from 'lucide-react'
 import { useAuth } from '../stores/authStore' // store central de la sesión
 import { ApiError } from '../services/api'    // clase de error que lanza la capa de API
+import IconButton from './IconButton'
 
 // Componente auxiliar: muestra un error GENERAL (ej. "El usuario ya está registrado").
 // "children" es el contenido que el padre pone entre las etiquetas.
@@ -156,9 +158,14 @@ export default function RegisterForm({ onSuccess }) {
       />
 
       {/* Botón de envío. disabled={loading} lo bloquea mientras se espera la API. */}
-      <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-        {loading ? 'Registrando…' : 'Registrarse'}
-      </button>
+      <IconButton
+        icon={loading ? Loader2 : UserPlus}
+        label={loading ? 'Registrando…' : 'Registrarse'}
+        variant="primary"
+        type="submit"
+        disabled={loading}
+        className={`btn-block ${loading ? 'icon-spin' : ''}`}
+      />
 
       {/* Acceso directo de vuelta al login: el texto cambiará de pantalla. */}
       <p className="auth-switch">

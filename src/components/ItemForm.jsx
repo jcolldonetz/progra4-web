@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Loader2, X } from 'lucide-react'
 import { api, ApiError } from '../services/api'
+import IconButton from './IconButton'
 
 function GlobalError({ children }) {
   if (!children) return null
@@ -16,6 +18,9 @@ function FieldError({ field, errors }) {
  * itemId = null -> POST /items; itemId = número -> PUT /items/{id}
  * (en edición, precarga los datos con GET /items/{id}).
  *
+ * Se muestra como un overlay centrado vertical y horizontalmente.
+ * Solo se cierra con la X o con Cancelar.
+ *
  * Props opcionales:
  *  - categorias: lista [{id, nombre}...] para el select "Categoría".
  *  - initialCategoriaId: categoría preseleccionada al crear (ej. al agregar
@@ -29,6 +34,7 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetched, setFetched] = useState(!isEdit)
+  const nombreRef = useRef(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -53,6 +59,10 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
       active = false
     }
   }, [itemId, isEdit])
+
+  useEffect(() => {
+    if (fetched) nombreRef.current?.focus()
+  }, [fetched])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -83,15 +93,22 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
   if (!fetched) return null
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{isEdit ? 'Editar ítem' : 'Nuevo ítem'}</h2>
-        <button type="button" className="btn btn-small" onClick={onCancel}>
-          Volver
-        </button>
-      </div>
+    <div className="modal-overlay">
+      <form
+        className="modal-card"
+        onSubmit={handleSubmit}
+        noValidate
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="item-form-title"
+      >
+        <div className="modal-head">
+          <h2 id="item-form-title" className="modal-title">
+            {isEdit ? 'Editar ítem' : 'Nuevo ítem'}
+          </h2>
+          <IconButton icon={X} label="Cerrar" onClick={onCancel} />
+        </div>
 
-      <form className="form-card" onSubmit={handleSubmit} noValidate>
         <GlobalError>{globalError}</GlobalError>
 
         <label className="field-label" htmlFor="nombre">
@@ -100,6 +117,7 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
         <input
           id="nombre"
           name="nombre"
+          ref={nombreRef}
           className="field-input"
           value={form.nombre}
           onChange={handleChange}
@@ -144,12 +162,15 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
         <FieldError field="categoria_id" errors={errors} />
 
         <div className="form-actions">
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear ítem'}
-          </button>
-          <button type="button" className="btn" onClick={onCancel}>
-            Cancelar
-          </button>
+          <IconButton
+            icon={loading ? Loader2 : Check}
+            label={isEdit ? 'Guardar cambios' : 'Crear ítem'}
+            variant="primary"
+            type="submit"
+            disabled={loading}
+            className={loading ? 'icon-spin' : ''}
+          />
+          <IconButton icon={X} label="Cancelar" onClick={onCancel} />
         </div>
       </form>
     </div>

@@ -20,8 +20,10 @@
 
 import { useState } from 'react'            // hook para crear "estado" en el componente
 import { Link } from 'react-router-dom'      // enlace SPA (sin recarga de página)
+import { Loader2, LogIn } from 'lucide-react'
 import { useAuth } from '../stores/authStore' // store central de la sesión
 import { ApiError } from '../services/api'    // clase de error que lanza la capa de API
+import IconButton from './IconButton'
 
 // Componente auxiliar: muestra un error GENERAL (ej. "Credenciales inválidas").
 // "children" es el contenido que el padre pone entre las etiquetas.
@@ -132,9 +134,14 @@ export default function LoginForm({ onSuccess }) {
       <FieldError field="password" errors={errors} />
 
       {/* Botón de envío. disabled={loading} lo bloquea mientras se espera la API. */}
-      <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-        {loading ? 'Ingresando…' : 'Ingresar'}
-      </button>
+      <IconButton
+        icon={loading ? Loader2 : LogIn}
+        label={loading ? 'Ingresando…' : 'Ingresar'}
+        variant="primary"
+        type="submit"
+        disabled={loading}
+        className={`btn-block ${loading ? 'icon-spin' : ''}`}
+      />
 
       {/* Acceso directo al registro: un <Link> (no un <a>) para que el
           router de React cambie de pantalla sin recargar el navegador. */}

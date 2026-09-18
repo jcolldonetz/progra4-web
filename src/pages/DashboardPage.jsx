@@ -116,7 +116,7 @@ export default function DashboardPage() {
     })
     if (!ok) return
     if (cat.items_count > 0) {
-      setError(`La categoría ${cat.nombre} tiene ${cat.items_count} ${cat.items_count === 1 ? 'item' : 'items'} asociados y no puede eliminarse.`)
+      setError(`La categoría ${cat.nombre} tiene ${cat.items_count} ${cat.items_count === 1 ? 'item asociado' : 'items asociados'} y no puede eliminarse.`)
       return
     }
     try {
@@ -139,15 +139,14 @@ export default function DashboardPage() {
 
         <div className="grid-2">
           <section>
-            {editingCat === null ? (
-              <CategoryList
-                items={categories}
-                loading={loadingCategories}
-                onNew={() => setEditingCat('nuevo')}
-                onEdit={(cat) => setEditingCat(cat.id)}
-                onDelete={handleDeleteCategory}
-              />
-            ) : (
+            <CategoryList
+              items={categories}
+              loading={loadingCategories}
+              onNew={() => setEditingCat('nuevo')}
+              onEdit={(cat) => setEditingCat(cat.id)}
+              onDelete={handleDeleteCategory}
+            />
+            {editingCat !== null && (
               <CategoryForm
                 categoriaId={editingCat === 'nuevo' ? null : editingCat}
                 onSaved={() => {
@@ -160,20 +159,19 @@ export default function DashboardPage() {
           </section>
 
           <section>
-            {editing === null ? (
-              <ItemList
-                items={items}
-                loading={loading}
-                categorias={categories}
-                meta={meta}
-                onPageChange={goToPage}
-                onPerPageChange={changePerPage}
-                onRefresh={reload}
-                onNew={() => setEditing('nuevo')}
-                onEdit={(item) => setEditing(item.id)}
-                onDelete={handleDeleteItem}
-              />
-            ) : (
+            <ItemList
+              items={items}
+              loading={loading}
+              categorias={categories}
+              meta={meta}
+              onPageChange={goToPage}
+              onPerPageChange={changePerPage}
+              onRefresh={reload}
+              onNew={() => setEditing('nuevo')}
+              onEdit={(item) => setEditing(item.id)}
+              onDelete={handleDeleteItem}
+            />
+            {editing !== null && (
               <ItemForm
                 itemId={editing === 'nuevo' ? null : editing}
                 categorias={categories}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
 import { itemsCache, invalidateAll } from '../services/itemsCache'
@@ -110,8 +111,13 @@ export default function CategoryItemsPage() {
       <main className="content">
         <div className="page-header">
           <h2>{categoria ? `Items de: ${categoria.nombre}` : 'Items de la categoría'}</h2>
-          <Link className="btn btn-small" to="/categorias">
-            Volver a categorías
+          <Link
+            className="btn btn-icon"
+            to="/categorias"
+            aria-label="Volver a categorías"
+            title="Volver a categorías"
+          >
+            <ArrowLeft size={18} aria-hidden="true" />
           </Link>
         </div>
 
@@ -119,21 +125,20 @@ export default function CategoryItemsPage() {
 
         {confirmDialog}
 
-        {editing === null ? (
-          <ItemList
-            items={items}
-            loading={loading}
-            categorias={categoria ? [categoria] : []}
-            titulo={categoria ? `Ítems de ${categoria.nombre}` : 'Ítems'}
-            meta={meta}
-            onPageChange={goToPage}
-            onPerPageChange={changePerPage}
-            onRefresh={reload}
-            onNew={() => setEditing('nuevo')}
-            onEdit={(item) => setEditing(item.id)}
-            onDelete={handleDelete}
-          />
-        ) : (
+        <ItemList
+          items={items}
+          loading={loading}
+          categorias={categoria ? [categoria] : []}
+          titulo={categoria ? `Ítems de ${categoria.nombre}` : 'Ítems'}
+          meta={meta}
+          onPageChange={goToPage}
+          onPerPageChange={changePerPage}
+          onRefresh={reload}
+          onNew={() => setEditing('nuevo')}
+          onEdit={(item) => setEditing(item.id)}
+          onDelete={handleDelete}
+        />
+        {editing !== null && (
           <ItemForm
             itemId={editing === 'nuevo' ? null : editing}
             categorias={categoria ? [categoria] : []}

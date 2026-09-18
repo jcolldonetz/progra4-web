@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { Check, X } from 'lucide-react'
+import IconButton from './IconButton'
 
 /**
  * Diálogo de confirmación reutilizable que reemplaza a window.confirm.
@@ -23,11 +25,10 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
-  const cancelRef = useRef(null)
   const overlayRef = useRef(null)
 
   useEffect(() => {
-    cancelRef.current?.focus()
+    overlayRef.current?.querySelector('button')?.focus()
   }, [])
 
   useEffect(() => {
@@ -60,16 +61,13 @@ export default function ConfirmDialog({
           {message}
         </p>
         <div className="confirm-actions">
-          <button type="button" ref={cancelRef} className="btn" onClick={onCancel}>
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            className={danger ? 'btn btn-danger' : 'btn btn-primary'}
+          <IconButton icon={X} label={cancelLabel} onClick={onCancel} />
+          <IconButton
+            icon={Check}
+            label={confirmLabel}
+            variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
-          >
-            {confirmLabel}
-          </button>
+          />
         </div>
       </div>
     </div>

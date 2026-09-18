@@ -65,7 +65,7 @@ export default function CategoryPage() {
     })
     if (!ok) return
     if (cat.items_count > 0) {
-      setError(`La categoría ${cat.nombre} tiene ${cat.items_count} ${cat.items_count === 1 ? 'item' : 'items'} asociados y no puede eliminarse.`)
+      setError(`La categoría ${cat.nombre} tiene ${cat.items_count} ${cat.items_count === 1 ? 'item asociado' : 'items asociados'} y no puede eliminarse.`)
       return
     }
     try {
@@ -86,15 +86,14 @@ export default function CategoryPage() {
 
         {confirmDialog}
 
-        {editing === null ? (
-          <CategoryList
-            items={categorias}
-            loading={loading}
-            onNew={() => setEditing('nuevo')}
-            onEdit={(cat) => setEditing(cat.id)}
-            onDelete={handleDelete}
-          />
-        ) : (
+        <CategoryList
+          items={categorias}
+          loading={loading}
+          onNew={() => setEditing('nuevo')}
+          onEdit={(cat) => setEditing(cat.id)}
+          onDelete={handleDelete}
+        />
+        {editing !== null && (
           <CategoryForm
             categoriaId={editing === 'nuevo' ? null : editing}
             onSaved={() => {
