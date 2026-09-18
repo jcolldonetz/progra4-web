@@ -81,6 +81,24 @@ npm run dev
 
 Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `qwerty67`.
 
+### Probar desde un celular en la misma red WiFi
+
+El servidor de desarrollo escucha en todas las interfaces (`server.host: true`
+en `vite.config.js`). Con el celular conectado a la **misma red WiFi** que la PC:
+
+1. Averiguar la IP local de la PC en la red WiFi:
+   ```powershell
+   Get-NetIPAddress -AddressFamily IPv4 | Where-Object InterfaceAlias -eq 'Wi-Fi'
+   ```
+   (o `ipconfig` y buscar la IPv4 del adaptador WiFi, p. ej. `192.168.100.73`).
+2. Abrir en el navegador del celular: `http://192.168.100.73:5173`.
+
+Las peticiones a la API van por el proxy de Vite, que corre **en la PC**, así que
+se resuelven contra `localhost:8000` sin configurar nada más.
+
+> Si la primera vez no carga, aceptar el aviso de **Firewall de Windows**
+> permitiendo el acceso en redes privadas al puerto 5173.
+
 ## Scripts disponibles
 
 | Comando            | Descripción                                       |
