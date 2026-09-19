@@ -6,8 +6,8 @@ export const CACHE_TTL_MS = 30_000
 /** Clave raíz del listado de categorías (sin paginar). */
 const KEY_CATEGORIAS = 'categorias'
 
-function itemsKey(page, perPage) {
-  return `items:${page}:${perPage}`
+function itemsKey(page, perPage, categoriaId, search) {
+  return `items:${page}:${perPage}:${categoriaId ?? ''}:${search ?? ''}`
 }
 
 function categoriaItemsKey(id, page, perPage) {
@@ -81,7 +81,9 @@ export const itemsCache = {
   list(params = {}, options) {
     const page = params.page ?? 1
     const perPage = params.per_page ?? 10
-    return load(itemsKey(page, perPage), () => api.items.list(params), options)
+    const categoriaId = params.categoria_id ?? null
+    const search = params.q ?? null
+    return load(itemsKey(page, perPage, categoriaId, search), () => api.items.list(params), options)
   },
   listByCategoria(id, params = {}, options) {
     const page = params.page ?? 1

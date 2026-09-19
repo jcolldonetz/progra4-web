@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
@@ -25,11 +25,30 @@ export default function ItemsPage() {
   const [meta, setMeta] = useState(null)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [categoriaId, setCategoriaId] = useState('')
+  const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  // Último valor ya "comiteado" a debouncedQuery. Evita que el timer del debounce
+  // vuelva a poner loading=true (y deje el spinner) si el texto no cambió.
+  const committedQuery = useRef('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null)
   const [refresh, setRefresh] = useState(0)
   const [ask, confirmDialog] = useConfirm()
+
+  useEffect(() => {
+    const value = query.trim()
+    const t = setTimeout(() => {
+      if (committedQuery.current === value) return
+      committedQuery.current = value
+      setDebouncedQuery(value)
+      setPage(1)
+      setLoading(true)
+      setError(null)
+    }, 500)
+    return () => clearTimeout(t)
+  }, [query])
 
   useEffect(() => {
     let active = true
@@ -42,8 +61,15 @@ export default function ItemsPage() {
       fn()
     }
 
+    const params = {
+      page,
+      per_page: perPage,
+      ...(categoriaId ? { categoria_id: Number(categoriaId) } : {}),
+      ...(debouncedQuery ? { q: debouncedQuery } : {}),
+    }
+
     itemsCache
-      .list({ page, per_page: perPage })
+      .list(params)
       .then((res) => {
         if (!active) return
         setItems(res.data)
@@ -60,7 +86,7 @@ export default function ItemsPage() {
     return () => {
       active = false
     }
-  }, [refresh, page, perPage])
+  }, [refresh, page, perPage, categoriaId, debouncedQuery])
 
   const reload = () => {
     invalidateAll()
@@ -81,6 +107,21 @@ export default function ItemsPage() {
     setPage(1)
     setLoading(true)
     setError(null)
+  }
+
+  const resetPageAndReload = () => {
+    setPage(1)
+    setLoading(true)
+    setError(null)
+  }
+
+  const changeCategoria = (value) => {
+    setCategoriaId(value)
+    resetPageAndReload()
+  }
+
+  const changeQuery = (value) => {
+    setQuery(value)
   }
 
   const handleDelete = async (item) => {
@@ -114,6 +155,10 @@ export default function ItemsPage() {
           loading={loading}
           categorias={categorias}
           meta={meta}
+          categoriaId={categoriaId}
+          onCategoriaChange={changeCategoria}
+          query={query}
+          onQueryChange={changeQuery}
           onPageChange={goToPage}
           onPerPageChange={changePerPage}
           onRefresh={reload}

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import IconButton from './IconButton'
 
 function formatPrice(value) {
@@ -59,6 +59,47 @@ function Pagination({ meta, onPageChange, onPerPageChange }) {
   )
 }
 
+/// Barra de filtros: selector de categoría y búsqueda por nombre.
+/// Se renderiza solo cuando la página provee los handlers (props opcionales).
+function Filters({ categorias, categoriaId, onCategoriaChange, query, onQueryChange }) {
+  if (!onCategoriaChange || !onQueryChange) {
+    return null
+  }
+
+  return (
+    <div className="filters">
+      <label className="filters-field">
+        <span className="filters-label">Categoría</span>
+        <select
+          className="field-input"
+          value={categoriaId || ''}
+          onChange={(e) => onCategoriaChange(e.target.value)}
+        >
+          <option value="">Todas</option>
+          {categorias.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="filters-field filters-field-grow">
+        <span className="filters-label">Buscar por nombre</span>
+        <span className="search-box">
+          <Search size={16} aria-hidden="true" />
+          <input
+            className="field-input search-input"
+            type="search"
+            placeholder="Ej. monitor"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+          />
+        </span>
+      </label>
+    </div>
+  )
+}
+
 /**
  * Muestra la tabla de items (escritorio) o tarjetas (móvil).
  *
@@ -69,14 +110,17 @@ function Pagination({ meta, onPageChange, onPerPageChange }) {
  *  - meta: {page, total, total_pages} proveniente de la API paginada.
  *  - onPageChange: callback que recibe la página a la que navegar.
  *  - onPerPageChange: callback que recibe la nueva cantidad por página.
+ *  - categoriaId / onCategoriaChange / query / onQueryChange: filtros de la
+ *    barra superior. Si onCategoriaChange y onQueryChange no se pasan, la
+ *    barra no se muestra.
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRefresh, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange }) {
+export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRefresh, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange, categoriaId, onCategoriaChange, query, onQueryChange }) {
   const catMap = Array.isArray(categorias)
     ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
     : null
 
-  if (loading) return <Spinner />
-
+  // Cabecera y filtros SIEMPRE montados: el input de búsqueda no se desmonta
+  // mientras carga, así conserva el foco y el cursor entre búsquedas.
   const header = (
     <div className="page-header">
       <h2>{titulo}</h2>
@@ -89,14 +133,17 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
     </div>
   )
 
-  if (items.length === 0) {
-    return (
-      <div className="page">
-        {header}
-        <p className="empty">No hay ítems registrados.</p>
-      </div>
-    )
-  }
+  const filters = (
+    <Filters
+      categorias={categorias}
+      categoriaId={categoriaId}
+      onCategoriaChange={onCategoriaChange}
+      query={query}
+      onQueryChange={onQueryChange}
+    />
+  )
+
+  const hasFilters = Boolean(categoriaId) || Boolean(query)
 
   const actions = (item) => (
     <>
@@ -110,58 +157,73 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
     </>
   )
 
+  let content
+  if (loading) {
+    content = <Spinner />
+  } else if (items.length === 0) {
+    content = (
+      <p className="empty">{hasFilters ? 'No hay ítems que coincidan con los filtros.' : 'No hay ítems registrados.'}</p>
+    )
+  } else {
+    content = (
+      <>
+        <div className="only-desktop">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th className="num">Precio</th>
+                {catMap !== null && <th>Categoría</th>}
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.id}</td>
+                  <td>{item.nombre}</td>
+                  <td className="num">{formatPrice(item.precio)}</td>
+                  {catMap !== null && (
+                    <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
+                  )}
+                  <td className="actions">{actions(item)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="cards">
+          {items.map((item) => (
+            <article className="card" key={item.id}>
+              <div className="card-head">
+                <h3 className="card-title">{item.nombre}</h3>
+                <span className="card-badge">#{item.id}</span>
+              </div>
+              <div className="card-meta">
+                <span className="card-price">{formatPrice(item.precio)}</span>
+                {catMap !== null && (
+                  <span>
+                    {item.categoria_id != null ? catMap[item.categoria_id] ?? 'Sin categoría' : 'Sin categoría'}
+                  </span>
+                )}
+              </div>
+              <div className="card-actions">{actions(item)}</div>
+            </article>
+          ))}
+        </div>
+
+        <Pagination meta={meta} onPageChange={onPageChange} onPerPageChange={onPerPageChange} />
+      </>
+    )
+  }
+
   return (
     <div className="page">
       {header}
-
-      <div className="only-desktop">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th className="num">Precio</th>
-              {catMap !== null && <th>Categoría</th>}
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>{item.id}</td>
-                <td>{item.nombre}</td>
-                <td className="num">{formatPrice(item.precio)}</td>
-                {catMap !== null && (
-                  <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
-                )}
-                <td className="actions">{actions(item)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="cards">
-        {items.map((item) => (
-          <article className="card" key={item.id}>
-            <div className="card-head">
-              <h3 className="card-title">{item.nombre}</h3>
-              <span className="card-badge">#{item.id}</span>
-            </div>
-            <div className="card-meta">
-              <span className="card-price">{formatPrice(item.precio)}</span>
-              {catMap !== null && (
-                <span>
-                  {item.categoria_id != null ? catMap[item.categoria_id] ?? 'Sin categoría' : 'Sin categoría'}
-                </span>
-              )}
-            </div>
-            <div className="card-actions">{actions(item)}</div>
-          </article>
-        ))}
-      </div>
-
-      <Pagination meta={meta} onPageChange={onPageChange} onPerPageChange={onPerPageChange} />
+      {filters}
+      {content}
     </div>
   )
 }
