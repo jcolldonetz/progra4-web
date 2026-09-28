@@ -324,7 +324,7 @@ body {
   cursor: not-allowed;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 980px) {
   .grid-2 {
     grid-template-columns: 1fr;
   }
@@ -746,7 +746,7 @@ a {
 /* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
-@media (max-width: 720px) {
+@media (max-width: 600px) {
   .only-desktop {
     display: none !important;
   }
