@@ -648,6 +648,10 @@ a {
   font-weight: 600;
 }
 
+.card-stock {
+  font-variant-numeric: tabular-nums;
+}
+
 .card-actions {
   display: flex;
   gap: 8px;

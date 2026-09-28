@@ -174,6 +174,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
                 <th>ID</th>
                 <th>Nombre</th>
                 <th className="num">Precio</th>
+                <th className="num">Stock</th>
                 {catMap !== null && <th>Categoría</th>}
                 <th>Acciones</th>
               </tr>
@@ -184,6 +185,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
                   <td>{item.id}</td>
                   <td>{item.nombre}</td>
                   <td className="num">{formatPrice(item.precio)}</td>
+                  <td className="num">{item.stock}</td>
                   {catMap !== null && (
                     <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
                   )}
@@ -203,6 +205,7 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
               </div>
               <div className="card-meta">
                 <span className="card-price">{formatPrice(item.precio)}</span>
+                <span className="card-stock">Stock: {item.stock}</span>
                 {catMap !== null && (
                   <span>
                     {item.categoria_id != null ? catMap[item.categoria_id] ?? 'Sin categoría' : 'Sin categoría'}

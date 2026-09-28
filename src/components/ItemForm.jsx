@@ -29,7 +29,7 @@ function FieldError({ field, errors }) {
 export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], initialCategoriaId = null }) {
   const isEdit = itemId != null
 
-  const [form, setForm] = useState({ nombre: '', precio: '', categoria_id: String(initialCategoriaId ?? '') })
+  const [form, setForm] = useState({ nombre: '', precio: '', categoria_id: String(initialCategoriaId ?? ''), stock: '' })
   const [errors, setErrors] = useState(null)
   const [globalError, setGlobalError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -48,6 +48,7 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
           nombre: item.nombre,
           precio: String(item.precio),
           categoria_id: String(item.categoria_id ?? ''),
+          stock: String(item.stock),
         })
       })
       .catch((err) => setGlobalError(err.message))
@@ -78,6 +79,7 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
         nombre: form.nombre,
         precio: Number(form.precio),
         categoria_id: form.categoria_id === '' ? null : Number(form.categoria_id),
+        stock: form.stock === '' ? 0 : Number(form.stock),
       }
       if (isEdit) await api.items.update(itemId, payload)
       else await api.items.create(payload)
@@ -141,6 +143,23 @@ export default function ItemForm({ itemId, onSaved, onCancel, categorias = [], i
           required
         />
         <FieldError field="precio" errors={errors} />
+
+        <label className="field-label" htmlFor="stock">
+          Stock
+        </label>
+        <input
+          id="stock"
+          name="stock"
+          type="number"
+          inputMode="numeric"
+          min="0"
+          step="1"
+          className="field-input"
+          value={form.stock}
+          onChange={handleChange}
+          placeholder="0"
+        />
+        <FieldError field="stock" errors={errors} />
 
         <label className="field-label" htmlFor="categoria_id">
           Categoría
