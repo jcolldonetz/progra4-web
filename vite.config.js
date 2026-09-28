@@ -38,6 +38,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        // WebSocket realtime: el cliente se conecta a "ws://<host>:5173/ws" y
+        // Vite lo reenvía al server de notificaciones (progra4-notifications).
+        // Sin ws:true el proxy de Vite no entiende el upgrade a WebSocket.
+        '/ws': {
+          target: process.env.VITE_WS_PROXY || 'http://localhost:8081',
+          ws: true,
+        },
       },
     },
   }

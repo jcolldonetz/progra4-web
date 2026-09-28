@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import IconButton from './IconButton'
 
 function formatPrice(value) {
@@ -113,8 +114,10 @@ function Filters({ categorias, categoriaId, onCategoriaChange, query, onQueryCha
  *  - categoriaId / onCategoriaChange / query / onQueryChange: filtros de la
  *    barra superior. Si onCategoriaChange y onQueryChange no se pasan, la
  *    barra no se muestra.
+ *  - onOrder: callback async (item, cantidad) => void. Si se pasa, cada fila
+ *    muestra un selector de cantidad y un botón "Pedir" (descuenta stock).
  */
-export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRefresh, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange, categoriaId, onCategoriaChange, query, onQueryChange }) {
+export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRefresh, categorias, titulo = 'Ítems', meta, onPageChange, onPerPageChange, categoriaId, onCategoriaChange, query, onQueryChange, onOrder }) {
   const catMap = Array.isArray(categorias)
     ? Object.fromEntries(categorias.map((c) => [c.id, c.nombre]))
     : null
@@ -157,6 +160,46 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
     </>
   )
 
+  // Control "Pedir": cantidad + botón de carrito. Se muestra solo si la página
+  // provee onOrder. El estado local por item evita levantar el listado completo.
+  function OrderControl({ item }) {
+    const [qty, setQty] = useState(1)
+    const [busy, setBusy] = useState(false)
+
+    if (!onOrder) return null
+
+    const handle = async () => {
+      setBusy(true)
+      try {
+        await onOrder(item, qty)
+      } finally {
+        setBusy(false)
+      }
+    }
+
+    return (
+      <span className="order-control">
+        <input
+          className="order-qty"
+          type="number"
+          min="1"
+          value={qty}
+          disabled={busy}
+          aria-label={`Cantidad para pedir de "${item.nombre}"`}
+          onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+        />
+        <IconButton
+          icon={ShoppingCart}
+          label={`Pedir ${qty} de "${item.nombre}"`}
+          variant="primary"
+          size="small"
+          disabled={busy || item.stock <= 0}
+          onClick={handle}
+        />
+      </span>
+    )
+  }
+
   let content
   if (loading) {
     content = <Spinner />
@@ -189,7 +232,10 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
                   {catMap !== null && (
                     <td>{item.categoria_id != null ? catMap[item.categoria_id] ?? '—' : '—'}</td>
                   )}
-                  <td className="actions">{actions(item)}</td>
+                  <td className="actions">
+                    {actions(item)}
+                    {onOrder && <OrderControl item={item} />}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -212,7 +258,10 @@ export default function ItemList({ items, loading, onNew, onEdit, onDelete, onRe
                   </span>
                 )}
               </div>
-              <div className="card-actions">{actions(item)}</div>
+              <div className="card-actions">
+                {actions(item)}
+                {onOrder && <OrderControl item={item} />}
+              </div>
             </article>
           ))}
         </div>

@@ -3,7 +3,9 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth, logout } from '../stores/authStore'
 import { api, ApiError } from '../services/api'
+import { showToast } from '../stores/toastStore'
 import { itemsCache, invalidateAll } from '../services/itemsCache'
+import { useRealtimeItems } from '../hooks/useRealtimeItems'
 import Navbar from '../components/Navbar'
 import ItemList from '../components/ItemList'
 import ItemForm from '../components/ItemForm'
@@ -34,6 +36,28 @@ export default function CategoryItemsPage() {
   const [editing, setEditing] = useState(null)
   const [refresh, setRefresh] = useState(0)
   const [ask, confirmDialog] = useConfirm()
+
+  // Mantiene el stock de la lista actualizado en vivo con los eventos realtime.
+  useRealtimeItems(setItems)
+
+  const handleOrder = async (item, cantidad) => {
+    try {
+      const data = await api.pedidos.create({ item_id: item.id, cantidad })
+      // Reflejo inmediato con el item devuelto por la API (el WS llega igual).
+      setItems((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, stock: data.item.stock } : it)),
+      )
+      // Toast verde de confirmación para quien carga el pedido. Los demás
+      // navegadores reciben "¡usuario pidió..." por el canal realtime.
+      showToast(`Pedido cargado: ${cantidad} × ${item.nombre}`, 'success')
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout()
+        return
+      }
+      setError(err.errors?.stock?.[0] ?? err.message ?? 'No se pudo registrar el pedido.')
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -137,6 +161,7 @@ export default function CategoryItemsPage() {
           onNew={() => setEditing('nuevo')}
           onEdit={(item) => setEditing(item.id)}
           onDelete={handleDelete}
+          onOrder={handleOrder}
         />
         {editing !== null && (
           <ItemForm

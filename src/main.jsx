@@ -12,7 +12,6 @@
 //    función principal de este archivo para que otros archivos la usen.
 // =============================================================================
 
-import { StrictMode } from 'react'                 // StrictMode: validaciones extra en desarrollo
 import { createRoot } from 'react-dom/client'      // createRoot: "monta" la app sobre el HTML
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom' // enrutador de URLs
 import './index.css'                               // estilos globales de toda la app
@@ -22,6 +21,7 @@ import DashboardPage from './pages/DashboardPage'  // pantalla del panel (solo c
 import ItemsPage from './pages/ItemsPage'          // gestión dedicada de items
 import CategoryPage from './pages/CategoryPage'    // gestión dedicada de categorías
 import CategoryItemsPage from './pages/CategoryItemsPage' // items de una categoría
+import RealtimeToasts from './components/RealtimeToasts'  // toasts de pedidos en vivo
 
 // App es el componente raíz: aquí se declara el ÁRBOL DE RUTAS, es decir, la
 // tabla que relaciona cada URL del navegador con la pantalla que se muestra.
@@ -29,6 +29,8 @@ export default function App() {
   return (
     // BrowserRouter: activa el enrutado. A partir de aquí React observa la URL.
     <BrowserRouter>
+      {/* Toasts realtime: montado una sola vez, por encima de todas las rutas. */}
+      <RealtimeToasts />
       <Routes>
         {/* URL /login  -> pantalla de LoginPage (formulario de inicio de sesión) */}
         <Route path="/login" element={<LoginPage />} />
@@ -53,8 +55,12 @@ export default function App() {
 // "Monta" la aplicación: busca en public/index.html el elemento
 // <div id="root"></div> (un "hueco" vacío) y coloca dentro TODO el árbol de
 // rutas de arriba. A partir de ese momento React controla el contenido.
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+//
+// NOTA (lección de la casa): NO usamos <StrictMode>. StrictMode es una
+// validación extra de React que, en desarrollo, monta → desmonta → vuelve a
+// montar cada componente para detectar efectos mal hechos. Nuestro canal
+// realtime es un singleton a nivel de módulo que se conecta desde los efectos
+// de RealtimeToasts, y ese doble ciclo abría WebSockets duplicados (se veía
+// como "Conectados: 1, 2, 2, 3..." en el server). Sin StrictMode cada
+// componente se monta UNA vez y hay un solo socket por navegador.
+createRoot(document.getElementById('root')).render(<App />)

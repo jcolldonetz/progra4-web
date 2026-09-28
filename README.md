@@ -2,7 +2,10 @@
 
 Cliente web (SPA) en **React + Vite** para la API [`progra4-api`](../progra4-api).
 
-Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, una vez autenticado, administrar la entidad **item** con operaciones CRUD (listar, ver, crear, editar y eliminar).
+Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, una vez autenticado, administrar la entidad **item** con operaciones CRUD (listar, ver, crear, editar y eliminar). Además puede **registrar pedidos** (`POST /pedidos`, el stock se descuenta) y recibe **notificaciones realtime**: a través de un WebSocket contra
+[`progra4-notifications`](../progra4-notifications), cuando otro cliente hace un
+pedido aparece un toast y el stock de la lista se actualiza **en vivo**, sin
+recargar la página.
 
 ## Características
 
@@ -15,18 +18,32 @@ Permite crear una cuenta (`/register`), iniciar sesión con JWT (`/login`) y, un
   - Creación (`POST /items`)
   - Edición (`PUT /items/{id}`)
   - Eliminación (`DELETE /items/{id}`)
+- Pedidos realtime (descuenta stock y avisa a los demás clientes):
+  - Por cada fila/card un control "Pedir" con cantidad (`POST /pedidos`).
+  - **Toast** cuando se registra un pedido (propio o de otro cliente).
+  - **Stock en vivo**: `useRealtimeItems` aplica el evento `pedido.creado` a la
+    lista sin refetch.
+- Canal realtime conectado/desconectado según la sesión y **reconexión
+  automática** con backoff (`src/services/realtime.js`).
 - Manejo de errores de la API (mensajes y errores por campo).
 
 ## Requisitos
 
 - [Node.js](https://nodejs.org/) 18 o superior (probado con las versiones actuales).
 - La API `progra4-api` en ejecución (requiere **PHP >= 8.1**).
+- **Opcional** (solo para el stock en vivo/los toasts): Redis y el server
+  `progra4-notifications`. Sin ellos el CRUD y los pedidos funcionan igual; lo
+  único que falta es el aviso en tiempo real a los otros clientes.
 
 > ¿Vas a probar desde un celular en la misma red WiFi? Saltar directo a
 > [Probar desde un celular en la misma red WiFi](#probar-desde-un-celular-en-la-misma-red-wifi),
 > que tiene su propio checklist (firewall, IP, `VITE_API_URL`).
 
 ## Puesta en marcha
+
+> Para ver los toasts y el stock en vivo, levantar **primero** Redis y el server
+> de notificaciones (sección [Pedidos realtime](#pedidos-realtime-stock-en-vivo)
+> abajo); si no, salta directo al paso 1.
 
 ### 1. Levantar la API
 
@@ -40,6 +57,15 @@ La API quedará disponible en `http://localhost:8000`. Para usar, por ejemplo, e
 
 ```powershell
 $env:REPOSITORY_DRIVER='memory'
+php -S localhost:8000 -t public
+```
+
+Para que los pedidos se **publiquen** en el canal realtime, arrancarla con
+`REDIS_URL` (equivalente al `JWT_SECRET` de la sección
+[Pedidos realtime](#pedidos-realtime-stock-en-vivo)):
+
+```powershell
+$env:REDIS_URL='127.0.0.1:6379'; $env:JWT_SECRET='secreto-solo-para-desarrollo-cambiar'
 php -S localhost:8000 -t public
 ```
 
@@ -107,6 +133,59 @@ npm run dev
 
 Abrir `http://localhost:5173`. Usuario de demostración: `admin` / `qwerty67`.
 
+> **Reiniciar si ya estaba corriendo.** El proxy `/ws` con `ws:true` se agrega
+> en `vite.config.js`; un `npm run dev` que seguía vivo desde antes del cambio
+> no tiene ese proxy y el WebSocket fallaría al conectar.
+
+## Pedidos realtime (stock en vivo)
+
+El flujo completo usa los tres proyectos del workspace:
+
+```
+.tab A "Pedir"  ──▶ progra4-api (POST /pedidos, descuenta stock, publica en Redis)
+                                                        │  canal "items.stock"
+                                                        ▼
+.tab B ◀── toast + stock en vivo ◀── WebSocket ◀── progra4-notifications (bridge + hub)
+                              │           ▲
+                              └─ Mismo WS pasando por el proxy /ws de Vite ─┘
+```
+
+Para que funcione hace falta levantar, en este orden:
+
+1. **Redis** local (`127.0.0.1:6379`). En clase se usa el contenedor de Docker
+   `progra4-redis` (ver README de [`progra4-notifications`](../progra4-notifications)).
+2. **Server de notificaciones** (dentro de `progra4-notifications`):
+   ```powershell
+   php bin\notif-server.php      # ws://127.0.0.1:8081/ws
+   ```
+3. **API publicando eventos** (dentro de `progra4-api`, con `composer install`
+   hecho una vez):
+   ```powershell
+   $env:REDIS_URL='127.0.0.1:6379'; $env:JWT_SECRET='secreto-solo-para-desarrollo-cambiar'
+   php -S localhost:8000 -t public
+   ```
+4. **Este cliente** (`npm run dev`).
+
+`JWT_SECRET` debe ser el **mismo** en la API y en el server de notificaciones:
+el login emite el token, la API publica el evento y el WebSocket valida ese
+mismo token (`?token=`). El cliente usa la **ruta relativa `/ws`** y el dev
+server de Vite la reenvía a `http://localhost:8081` con `ws:true`
+(`vite.config.js`); si la URL del server fuera distinta, se sobreescribe con la
+variable `VITE_WS_URL` (ver `.env.example`).
+
+Demo: abrir **dos ventanas** con la app, en la primera usar el botón "Pedir"
+de un ítem, y ver cómo en la segunda baja el stock y aparece el toast — sin
+recargar. Quien carga el pedido ve un toast **verde** de confirmación; los
+demás ven el aviso **azul** "¡<usuario> pidió N × <ítem>!".
+
+> **Para ver dos usuarios distintos a la vez**, abrí **una ventana normal y una
+> de incógnito** (o dos navegadores/perfiles). Dos ventanas de incógnito
+> comparten el mismo almacenamiento y no pueden tener sesiones distintas. La
+> app guarda la sesión en memoria por ventana (`services/api.js`), así que
+> durante la sesión de cada ventana el token que se ve en pantalla es
+> exactamente el que se envía, pero al recargar se relee el almacenamiento
+> compartido y gana la última sesión escrita.
+
 ## Probar desde un celular en la misma red WiFi
 
 El flujo con un teléfono **no** es "el celular habla directo con la API", sino
@@ -115,7 +194,15 @@ esto:
 ```
 celular  ──HTTP por WiFi──▶  dev server de Vite (PC, :5173)
                                 └── proxy /api ──▶ API PHP (PC, :8000)
+                                └── proxy /ws  ──▶ notificaciones (PC, :8081)   [realtime]
 ```
+
+El WebSocket realtime usa el **mismo** proxy: el cliente conecta a
+`ws://<IP>:5173/ws` y Vite lo reenvía con `ws:true`. O sea, para el realtime
+desde el celular tampoco hace falta exponer el 8081 ni tocar
+`CORS_ALLOWED_ORIGINS` del server de notificaciones (ese check los hace el
+server WS solo cuando se le *conecta* otro origen; a través del proxy el origen
+que ve es `http://localhost:5173`, que ya está en la lista blanca).
 
 Todo lo que hay a la derecha corre **en la PC**: la API puede quedarse escuchando
 solo en `localhost` y el celular nunca la ve. Por eso no hay CORS de por medio
@@ -288,13 +375,18 @@ Sin el paso 3 el navegador bloquea la respuesta y la consola muestra
 
 ```
 src/
-├── main.jsx                  Punto de entrada
+├── main.jsx                  Punto de entrada (monta <RealtimeToasts /> arriba de las rutas)
 ├── services/
-│   ├── api.js                Cliente HTTP (fetch), base de la API y manejo del JWT
+│   ├── api.js                Cliente HTTP (fetch), base de la API, manejo del JWT y api.pedidos
+│   ├── realtime.js           Cliente WebSocket (reconexión con backoff, ?token=) — estado "externo"
 │   └── itemsCache.js         Caché de items en memoria
-├── stores/authStore.js       Estado de sesión (token + usuario)
-├── components/               Navbar, formularios, listas, diálogos
-├── hooks/useConfirm.jsx      Hook del diálogo de confirmación
+├── stores/
+│   ├── authStore.js          Estado de sesión (token + usuario)
+│   └── realtimeStore.js      Estado del canal WS (useRealtime / connect / disconnect)
+├── components/               Navbar, ItemList (con control "Pedir"), RealtimeToasts (toasts), formularios…
+├── hooks/
+│   ├── useConfirm.jsx        Hook del diálogo de confirmación
+│   └── useRealtimeItems.jsx  Aplica los eventos "pedido.creado" al stock de la lista
 ├── pages/                    Login, Register, Dashboard, Items, Categories
-└── index.css                 Estilos globales
+└── index.css                 Estilos globales (incluye toasts y control de pedido)
 ```

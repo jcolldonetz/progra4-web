@@ -1,24 +1,52 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+/*
+ * SESIÓN DEL NAVEGADOR: una cache en memoria con respaldo en localStorage.
+ *
+ * Por qué la cache (lección importante): dos ventanas del MISMO perfil —por
+ * ejemplo dos ventanas de incógnito, o dos pestañas— comparten el mismo
+ * localStorage. Si cada request leyera el token de ahí, la ventana que en
+ * pantalla es "cliente1" podría enviar el token que otra ventana escribió
+ * ("cliente2"): el backend atribuiría el pedido al usuario equivocado y los
+ * toasts realtime mostrarían el nombre que no corresponde.
+ *
+ * Con la cache, cada ventana conserva SU sesión durante toda su vida: lo que
+ * se ve en pantalla es exactamente el token que viaja en cada request y en el
+ * WebSocket. Al recargar la página se vuelve a leer de localStorage (gana la
+ * última sesión escrita). Para tener dos usuarios REALMENTE simultáneos en el
+ * mismo equipo, usá perfiles/particiones distintas: una ventana normal + una
+ * de incógnito (o dos navegadores).
+ */
+const TOKEN_KEY = 'progra4_token'
+const USER_KEY = 'progra4_user'
+
+let currentToken = localStorage.getItem(TOKEN_KEY)
+let currentUser = readUser(localStorage.getItem(USER_KEY))
+
+function readUser(raw) {
+  try {
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 export const storage = {
   getToken() {
-    return localStorage.getItem('progra4_token')
+    return currentToken
   },
   setToken(token) {
-    if (token) localStorage.setItem('progra4_token', token)
-    else localStorage.removeItem('progra4_token')
+    currentToken = token || null
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
   },
   getUser() {
-    const raw = localStorage.getItem('progra4_user')
-    try {
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
+    return currentUser
   },
   setUser(user) {
-    if (user) localStorage.setItem('progra4_user', JSON.stringify(user))
-    else localStorage.removeItem('progra4_user')
+    currentUser = user || null
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
+    else localStorage.removeItem(USER_KEY)
   },
 }
 
@@ -120,6 +148,18 @@ export const api = {
     remove(id) {
       // DELETE /items/{id} -> 204 | 404 | 422
       return request(`/items/${id}`, { method: 'DELETE' })
+    },
+  },
+
+  // Pedidos (usa /pedidos)
+  pedidos: {
+    list() {
+      // GET /pedidos -> 200 [Pedido]
+      return request('/pedidos').then(normalizeCollection)
+    },
+    create(payload) {
+      // POST /pedidos -> 201 { pedido, item, username } | 404 | 422
+      return request('/pedidos', { method: 'POST', body: payload })
     },
   },
 
